@@ -7,5 +7,5 @@ def get_db():
 
     try:
         yield session
-    except:
+    finally:
         session.close()
