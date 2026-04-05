@@ -1,24 +1,24 @@
-from sqlalchemy import or_
 from sqlalchemy.orm import Session
+
 from schemas.user import UserLogin
-from models.user import User
 from core.security import verify_password, create_access_token
+from services.user_services import get_user_by_email_or_username
 
 
 def authenticate_user(db: Session, user: UserLogin):
 
-    db_user = (
-        db.query(User)
-        .filter(or_(User.username == user.username, User.email == user.username))
-        .first()
+    db_user = get_user_by_email_or_username(
+        db=db, email=user.username, username=user.username
     )
 
     if not db_user:
 
         return None
 
-    if not verify_password(user.password, db_user.password):
+    if not verify_password(password=user.password, hashed_password=db_user.password):
 
         return None
 
-    return create_access_token({"sub": str(db_user.id), "role": db_user.role.value})
+    claims = {"sub": str(db_user.id), "role": db_user.role.value}
+
+    return create_access_token(claims=claims)

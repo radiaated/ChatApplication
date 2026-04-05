@@ -18,4 +18,6 @@ def verify_password(password: str, hashed_password):
 
 def create_access_token(claims: dict):
 
-    return jwt.encode(claims, settings.SECRET_KEY, settings.JWT_ALGORITHM)
+    return jwt.encode(
+        claims=claims, key=settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM
+    )

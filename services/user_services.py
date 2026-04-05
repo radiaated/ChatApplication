@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
+
 from models.user import User, UserRole
-
 from core.security import hash_password
-
 from schemas.user import UserCreate
 
 
@@ -20,3 +20,12 @@ def create_user(db: Session, user: UserCreate):
     db.refresh(db_user)
 
     return db_user
+
+
+def get_user_by_email_or_username(db: Session, email: str, username: str):
+
+    return (
+        db.query(User)
+        .filter(or_(User.username == username, User.email == email))
+        .first()
+    )
