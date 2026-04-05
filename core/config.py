@@ -10,6 +10,8 @@ load_dotenv()
 class Settings(BaseSettings):
 
     DATABASE_URL: str = os.environ.get("DATABASE_URL")
+    SECRET_KEY: str = os.environ.get("SECRET_KEY")
+    JWT_ALGORITHM: str = os.environ.get("JWT_ALGORITHM")
 
 
 settings = Settings()
