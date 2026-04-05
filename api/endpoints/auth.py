@@ -12,9 +12,7 @@ auth_router = APIRouter()
 @auth_router.post("/signup/")
 async def signup(user: UserCreate, db=Depends(get_db)):
 
-    if get_user_by_email_or_username(
-        db=db, username=user.username, email=user.username
-    ):
+    if get_user_by_email_or_username(db=db, username=user.username, email=user.email):
         return JSONResponse(
             content={"detail": "User with the given username or email already exists"},
             status_code=status.HTTP_400_BAD_REQUEST,

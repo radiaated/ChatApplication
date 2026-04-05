@@ -10,6 +10,6 @@ app.include_router(auth_router, prefix="/api/auth")
 
 
 @app.get("/ping/")
-def ping():
+async def ping():
 
     return {"status": "active"}
