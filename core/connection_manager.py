@@ -25,13 +25,12 @@ class ConnectionManager:
             if not self.active_connections[room_id]:
                 del self.active_connections[room_id]
 
-    async def broadcast(self, message: str, room_id: int, sender_id: int):
+    async def broadcast(self, message: dict, room_id: int):
 
         if room_id in self.active_connections:
-            for user_id, connection in self.active_connections[room_id].items():
-                message_with_class = {"text": message, "is_self": user_id == sender_id}
+            for connection in self.active_connections[room_id].values():
 
-                await connection.send_json(message_with_class)
+                await connection.send_json(message)
 
 
 manager = ConnectionManager()
