@@ -1,8 +1,15 @@
-from sqlalchemy import Integer, Column, String, DateTime, ForeignKey, func
+from sqlalchemy import Table, Integer, Column, String, DateTime, ForeignKey, func
 from sqlalchemy.orm import relationship
 
 from db.base import Base
 from models.user import User
+
+room_participants = Table(
+    "room_participants",
+    Base.metadata,
+    Column("user_id", ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
+    Column("room_id", ForeignKey("rooms.id", ondelete="CASCADE"), primary_key=True),
+)
 
 
 class Room(Base):
@@ -17,7 +24,11 @@ class Room(Base):
         Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
 
-    admin = relationship("User", back_populates="rooms")
+    admin = relationship("User", back_populates="admin_rooms", foreign_keys=[admin_id])
+    messages = relationship("Message", back_populates="room", uselist=False)
+    participants = relationship(
+        "User", secondary=room_participants, back_populates="participant_rooms"
+    )
 
 
 class Message(Base):
@@ -39,5 +50,5 @@ class Message(Base):
         Integer, ForeignKey("rooms.id", ondelete="CASCADE"), nullable=False
     )
 
-    user = relationship("User", back_populates="user_messages")
-    room = relationship("Room", back_populates="room_messages")
+    user = relationship("User", back_populates="messages")
+    room = relationship("Room", back_populates="messages")
