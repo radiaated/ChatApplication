@@ -3,7 +3,12 @@ from fastapi.responses import JSONResponse
 
 from api.deps import get_db, role_check
 from schemas.user import UserResponse, UserCreate, UserUpdate
-from schemas.chat import ChatRoomCreate, ChatRoomUpdate, ChatRoomResponse
+from schemas.chat import (
+    ChatRoomCreate,
+    ChatRoomUpdate,
+    ChatRoomResponse,
+    ChatRoomMessageCount,
+)
 from services import user_services, chat_services
 
 from typing import List
@@ -178,3 +183,18 @@ async def delete_room(
         return response
 
     return room
+
+
+# Dashboard
+
+
+@admin_router.get("/dashboard/room-message/", response_model=List[ChatRoomMessageCount])
+async def retrieve_dashboard_room_message(
+    db=Depends(get_db), _=Depends(role_check("admin"))
+):
+
+    room_messages_count = chat_services.get_room_messages_count(db=db)
+
+    print(room_messages_count)
+
+    return room_messages_count

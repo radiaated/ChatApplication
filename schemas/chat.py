@@ -39,3 +39,10 @@ class ChatMessageResponse(ChatMessage):
 
     id: int
     sender_id: int
+
+
+class ChatRoomMessageCount(BaseModel):
+
+    id: int
+    name: str
+    message_count: int

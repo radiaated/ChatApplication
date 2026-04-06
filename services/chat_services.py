@@ -1,8 +1,14 @@
 from typing import List, Optional
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
-from schemas.chat import ChatMessageRequest, ChatRoomCreate, ChatRoomUpdate
+from schemas.chat import (
+    ChatMessageRequest,
+    ChatRoomCreate,
+    ChatRoomUpdate,
+    ChatRoomMessageCount,
+)
 from models.chat import Message, Room
 from models.user import User
 from datetime import datetime
@@ -242,3 +248,29 @@ def create_message(
         db.rollback()
         print(ex)
         return None
+
+
+def get_room_messages_count(db: Session) -> List[ChatRoomMessageCount]:
+
+    try:
+
+        db_messages = (
+            db.query(Room.id, Room.name, func.count(Message.id))
+            .outerjoin(Message, Room.id == Message.room_id)
+            .group_by(Room.id)
+            .all()
+        )
+
+        messages = [
+            {"id": room_id, "name": name, "message_count": count}
+            for room_id, name, count in db_messages
+        ]
+
+        return messages
+
+    except SQLAlchemyError as ex:
+
+        db.rollback()
+        print(ex)
+
+        return []
