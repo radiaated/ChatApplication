@@ -7,11 +7,13 @@ from schemas.chat import (
     ChatRoomCreate,
     ChatRoomUpdate,
     ChatRoomResponse,
-    ChatRoomMessageCount,
+    ChatRoomMessageCountResponse,
+    UserActivityResponse,
 )
 from services import user_services, chat_services
 
 from typing import List
+from datetime import datetime
 
 admin_router = APIRouter()
 
@@ -188,13 +190,45 @@ async def delete_room(
 # Dashboard
 
 
-@admin_router.get("/dashboard/room-message/", response_model=List[ChatRoomMessageCount])
+@admin_router.get(
+    "/dashboard/room-message/", response_model=List[ChatRoomMessageCountResponse]
+)
 async def retrieve_dashboard_room_message(
-    db=Depends(get_db), _=Depends(role_check("admin"))
+    start: str | None = None,
+    end: str | None = None,
+    db=Depends(get_db),
+    _=Depends(role_check("admin")),
 ):
 
-    room_messages_count = chat_services.get_room_messages_count(db=db)
+    start_datetime = datetime.fromisoformat(start) if start else None
+    end_datetime = datetime.fromisoformat(end) if end else None
 
-    print(room_messages_count)
+    room_messages_count = chat_services.get_room_messages_count(
+        db=db, start_datetime=start_datetime, end_datetime=end_datetime
+    )
 
     return room_messages_count
+
+
+@admin_router.get("/dashboard/user-participation/", response_model=UserActivityResponse)
+async def retrieve_dashboard_user_participation(
+    user_id: int | None = None,
+    start: str | None = None,
+    end: str | None = None,
+    db=Depends(get_db),
+    _=Depends(role_check("admin")),
+):
+
+    start_datetime = datetime.fromisoformat(start) if start else None
+    end_datetime = datetime.fromisoformat(end) if end else None
+
+    messages_count = chat_services.get_user_messages_count(
+        db=db, user_id=user_id, start_datetime=start_datetime, end_datetime=end_datetime
+    )
+
+    rooms_count = chat_services.get_user_rooms_count(db=db, user_id=user_id)
+
+    return {
+        "messages_count": messages_count,
+        "rooms_count": rooms_count,
+    }

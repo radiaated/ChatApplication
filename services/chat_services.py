@@ -7,9 +7,11 @@ from schemas.chat import (
     ChatMessageRequest,
     ChatRoomCreate,
     ChatRoomUpdate,
-    ChatRoomMessageCount,
+    ChatRoomMessageCountResponse,
+    UserMessageCount,
+    UserRoomCount,
 )
-from models.chat import Message, Room
+from models.chat import Message, Room, room_participants
 from models.user import User
 from datetime import datetime
 
@@ -250,7 +252,11 @@ def create_message(
         return None
 
 
-def get_room_messages_count(db: Session) -> List[ChatRoomMessageCount]:
+def get_room_messages_count(
+    db: Session,
+    start_datetime: datetime | None = None,
+    end_datetime: datetime | None = None,
+) -> List[ChatRoomMessageCountResponse]:
 
     try:
 
@@ -258,8 +264,14 @@ def get_room_messages_count(db: Session) -> List[ChatRoomMessageCount]:
             db.query(Room.id, Room.name, func.count(Message.id))
             .outerjoin(Message, Room.id == Message.room_id)
             .group_by(Room.id)
-            .all()
         )
+
+        if start_datetime and end_datetime:
+            db_messages = db_messages.filter(
+                Message.datetime_delivered.between(start_datetime, end_datetime)
+            )
+
+        db_messages = db_messages.all()
 
         messages = [
             {"id": room_id, "name": name, "message_count": count}
@@ -270,7 +282,83 @@ def get_room_messages_count(db: Session) -> List[ChatRoomMessageCount]:
 
     except SQLAlchemyError as ex:
 
-        db.rollback()
+        print(ex)
+
+        return []
+
+
+def get_user_messages_count(
+    db: Session,
+    start_datetime: datetime | None = None,
+    end_datetime: datetime | None = None,
+    user_id: int | None = None,
+) -> List[UserMessageCount]:
+
+    try:
+
+        db_messages = (
+            db.query(User.id, User.username, func.count(Message.id))
+            .outerjoin(Message, Message.sender_id == User.id)
+            .group_by(User.id)
+        )
+
+        if start_datetime and end_datetime:
+            db_messages = db_messages.filter(
+                Message.datetime_delivered.between(start_datetime, end_datetime)
+            )
+
+        if user_id:
+
+            db_message = db_messages.filter(User.id == user_id).first()
+
+            db_messages = [db_message] if db_message else []
+
+        else:
+
+            db_messages = db_messages.all()
+
+        messages = [
+            {"user_id": user_id, "username": username, "message_count": count}
+            for user_id, username, count in db_messages
+        ]
+
+        return messages
+
+    except SQLAlchemyError as ex:
+
+        print(ex)
+
+        return []
+
+
+def get_user_rooms_count(db: Session, user_id: int) -> List[UserRoomCount]:
+
+    try:
+
+        db_rooms = (
+            db.query(
+                User.id.label("user_id"),
+                User.username,
+                func.count(room_participants.c.room_id).label("room_count"),
+            )
+            .outerjoin(room_participants, room_participants.c.user_id == User.id)
+            .group_by(User.id)
+        )
+
+        if user_id:
+
+            db_room = db_rooms.filter(User.id == user_id).first()
+
+            db_rooms = [db_room] if db_room else []
+
+        else:
+
+            db_rooms = db_rooms.all()
+
+        return db_rooms
+
+    except SQLAlchemyError as ex:
+
         print(ex)
 
         return []
