@@ -37,11 +37,11 @@ class Message(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     text = Column(String, nullable=False)
-    date_sent = Column(
+    datetime_sent = Column(
         DateTime,
         nullable=False,
     )
-    date_delivered = Column(DateTime, nullable=False, default=func.now())
+    datetime_delivered = Column(DateTime, nullable=False, default=func.now())
 
     sender_id = Column(
         Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False

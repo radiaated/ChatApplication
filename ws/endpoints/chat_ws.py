@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from ws.deps import get_auth_user_ws
 from api.deps import get_db
 from services.user_services import get_user_by_id
+from services.chat_services import add_participant_to_room, add_message
 from schemas.chat import ChatMessage, ChatMessageResponse
 
 from core.connection_manager import manager
@@ -16,6 +17,8 @@ async def chat_room(
 ):
 
     await manager.connect(websocket=ws, room_id=id, user_id=user_id)
+
+    add_participant_to_room(db=db, room_id=id, user_id=user_id)
 
     user_detail = get_user_by_id(db=db, id=user_id)
 
@@ -31,14 +34,23 @@ async def chat_room(
 
             chat_message = ChatMessage(**data)
 
-            message_response = ChatMessageResponse(
+            db_message = add_message(
+                db=db,
+                room_id=id,
+                message=chat_message,
                 sender_id=user_id,
-                sender_username=user_detail["username"],
-                message=chat_message.message,
-                date_sent=chat_message.date_sent,
             )
 
-            await manager.broadcast(message=message_response.model_dump(), room_id=id)
+            message_response = ChatMessageResponse(
+                message=db_message.text,
+                datetime_sent=db_message.datetime_delivered,
+                sender_id=db_message.sender_id,
+                sender_username=user_detail["username"],
+            )
+
+            await manager.broadcast(
+                message=message_response.model_dump(mode="json"), room_id=id
+            )
 
     except WebSocketDisconnect:
 

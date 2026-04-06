@@ -3,6 +3,8 @@ from schemas.chat import ChatMessageResponse, ChatRoomCreate, ChatRoomUpdate
 from models.chat import Message, Room
 from models.user import User
 
+from services.user_services import get_user_by_id
+
 
 def get_room_by_id(
     db: Session,
@@ -89,12 +91,27 @@ def remove_room(
     return db_room
 
 
-def add_message(db: Session, room_id: int, message: ChatMessageResponse):
+def add_participant_to_room(db: Session, room_id: int, user_id: int):
+
+    db_room = db.query(Room).filter(Room.id == room_id).first()
+
+    db_user = db.query(User).filter(User.id == user_id).first()
+
+    if db_user not in db_room.participants:
+
+        db_room.participants.append(db_user)
+
+    db.commit()
+
+
+def add_message(
+    db: Session, room_id: int, message: ChatMessageResponse, sender_id: int
+):
 
     db_message = Message(
-        text=message,
-        date_sent=message.date_sent,
-        sender_id=message.sender_id,
+        text=message.message,
+        datetime_sent=message.datetime_sent,
+        sender_id=sender_id,
         room_id=room_id,
     )
 

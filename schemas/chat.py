@@ -1,4 +1,5 @@
 from pydantic import BaseModel, ConfigDict
+from datetime import datetime
 
 
 class ChatRoomResponse(BaseModel):
@@ -27,10 +28,12 @@ class ChatRoomUpdate(BaseModel):
 class ChatMessage(BaseModel):
 
     message: str
-    date_sent: str
+    datetime_sent: datetime
 
 
 class ChatMessageResponse(ChatMessage):
+
+    model_config = ConfigDict(from_attributes=True)
 
     sender_id: int
     sender_username: str
