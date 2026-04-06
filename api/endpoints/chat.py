@@ -41,6 +41,18 @@ def list_participant_rooms(
     return db_rooms
 
 
+@chat_router.get("/room/{id}/", response_model=ChatRoomResponse)
+def retrieve_participant_room(
+    id: int, db=Depends(get_db), user_id=Depends(role_check("user", "admin"))
+):
+
+    db_room = chat_services.get_participant_room(
+        db=db, room_id=id, participant_id=user_id
+    )
+
+    return db_room
+
+
 @chat_router.post("/room/", response_model=ChatRoomResponse)
 def create_room(
     chat_room: ChatRoomCreate,
@@ -98,8 +110,8 @@ def delete_room(
 @chat_router.get("/room/{id}/messages/", response_model=List[ChatMessageResponse])
 def retrieve_recent_room_messages(
     id: int,
-    cursor: str,
     limit: int | None,
+    cursor: str | None = None,
     db=Depends(get_db),
     user_id=Depends(role_check("user", "admin")),
 ):
@@ -112,7 +124,10 @@ def retrieve_recent_room_messages(
         )
 
     db_messages = chat_services.get_recent_room_messages(
-        db=db, room_id=id, cursor=datetime.fromisoformat(cursor), limit=limit
+        db=db,
+        room_id=id,
+        cursor=datetime.fromisoformat(cursor) if cursor else None,
+        limit=limit,
     )
 
     messages = [

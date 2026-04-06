@@ -1,4 +1,6 @@
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
+
 from schemas.chat import ChatMessageRequest, ChatRoomCreate, ChatRoomUpdate
 from models.chat import Message, Room
 from models.user import User
@@ -19,7 +21,7 @@ def get_room(
     room_id: int,
 ):
 
-    db_room = db.query(Room).filter(Room.id == room_id).first()
+    db_room = db.get(Room, room_id)
 
     return db_room
 
@@ -34,6 +36,22 @@ def get_participant_rooms(
     )
 
     return db_rooms
+
+
+def get_participant_room(
+    db: Session,
+    room_id: int,
+    participant_id: int,
+):
+
+    db_room = (
+        db.query(Room)
+        .join(Room.participants)
+        .filter(User.id == participant_id, Room.id == room_id)
+        .first()
+    )
+
+    return db_room
 
 
 def create_room(db: Session, chat_room: ChatRoomCreate, admin_id: int):
@@ -62,7 +80,7 @@ def update_room(
     admin_check: bool = True,
 ):
 
-    db_room = db.query(Room).filter(Room.id == room_id).first()
+    db_room = db.get(Room, room_id)
 
     if db_room and (not admin_check or db_room.admin_id == user_id):
 
@@ -83,7 +101,7 @@ def update_room(
 
 def delete_room(db: Session, room_id: int, user_id: int, admin_check: bool = True):
 
-    db_room = db.query(Room).filter(Room.id == room_id).first()
+    db_room = db.get(Room, room_id)
 
     if db_room and (not admin_check or db_room.admin_id == user_id):
 
@@ -103,58 +121,56 @@ def get_recent_room_messages(
     limit: int = 10,
 ):
 
-    if cursor:
+    query = db.query(Message).filter(Message.room_id == room_id)
 
-        db_messages = (
-            db.query(Message)
-            .filter(Message.room_id == room_id)
-            .filter(Message.datetime_delivered < cursor)
-            .order_by(Message.datetime_delivered.desc())
-            .limit(limit)
-            .all()
-        )
-    else:
-        db_messages = (
-            db.query(Message)
-            .filter(Message.room_id == room_id)
-            .order_by(Message.datetime_delivered.desc())
-            .limit(limit)
-            .all()
-        )
+    if cursor is not None:
+        query = query.filter(Message.datetime_delivered < cursor)
 
-    return db_messages
+    messages = query.order_by(Message.datetime_delivered.desc()).limit(limit).all()
+
+    return messages
 
 
 def add_room_participant(db: Session, room_id: int, user_id: int):
 
-    db_room = db.query(Room).filter(Room.id == room_id).first()
+    try:
 
-    db_user = db.query(User).filter(User.id == user_id).first()
+        db_room = db.get(Room, room_id)
+        db_user = db.get(User, user_id)
 
-    if db_room and db_user:
+        if not db_room or not db_user:
+            return False
 
-        if db_user not in db_room.participants:
+        if any(user.id == user_id for user in db_room.participants):
+            return True
 
-            db_room.participants.append(db_user)
-
+        db_room.participants.append(db_user)
         db.commit()
 
         return True
 
-    return False
+    except SQLAlchemyError:
+        db.rollback()
+        return False
 
 
 def check_room_participant(db: Session, room_id: int, user_id: int):
 
-    db_room = db.query(Room).filter(Room.id == room_id).first()
+    try:
 
-    db_user = db.query(User).filter(User.id == user_id).first()
+        db_room = db.get(Room, room_id)
 
-    if db_user in db_room.participants:
+        db_user = db.get(User, user_id)
 
-        return True
+        if db_user in db_room.participants:
 
-    return False
+            return True
+
+        return False
+
+    except SQLAlchemyError:
+        db.rollback()
+        return False
 
 
 def create_message(

@@ -36,13 +36,15 @@ def update_user(
     user: UserUpdate,
 ):
 
-    if get_user_by_email_or_username(db=db, username=user.username, email=user.email):
+    if get_user_by_email_or_username(
+        db=db, username=user.username, email=user.email, excluded_user_id=user_id
+    ):
         raise HTTPException(
             detail="User with the given username or email already exists",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
-    db_user = db.query(User).filter(User.id == user_id).first()
+    db_user = db.get(User, user_id)
 
     if db_user:
 
@@ -69,7 +71,7 @@ def delete_user(
     user_id: int,
 ):
 
-    db_user = db.query(User).filter(User.id == user_id).first()
+    db_user = db.get(User, user_id)
 
     if db_user:
 
@@ -84,7 +86,7 @@ def delete_user(
 
 def get_users(db: Session):
 
-    return db.query(User).all()
+    return db.get(User).all()
 
 
 def get_user(db: Session, id: int):
@@ -106,10 +108,12 @@ def get_user(db: Session, id: int):
     return None
 
 
-def get_user_by_email_or_username(db: Session, email: str, username: str):
+def get_user_by_email_or_username(
+    db: Session, email: str, username: str, excluded_user_id: int | None = None
+):
 
-    return (
-        db.query(User)
-        .filter(or_(User.username == username, User.email == email))
-        .first()
-    )
+    query = db.query(User).filter(or_(User.username == username, User.email == email))
+    if excluded_user_id:
+        query = query.filter(User.id != excluded_user_id)
+
+    return query.first()

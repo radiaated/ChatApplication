@@ -12,7 +12,7 @@ auth_router = APIRouter()
 @auth_router.post("/signup/")
 async def signup(user: UserCreate, db=Depends(get_db)):
 
-    user = user_services.add_user(db=db, user=user)
+    user = user_services.create_user(db=db, user=user)
 
     return JSONResponse(
         content={"detail": "User created."}, status_code=status.HTTP_201_CREATED
