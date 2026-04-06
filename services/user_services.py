@@ -53,14 +53,13 @@ def edit_user_by_id(
 def remove_user_by_id(
     db: Session,
     user_id: int,
-    user: UserUpdate,
 ):
 
     db_user = db.query(User).filter(User.id == user_id).first()
 
     if db_user:
 
-        db.delete(user)
+        db.delete(db_user)
 
         db.commit()
 

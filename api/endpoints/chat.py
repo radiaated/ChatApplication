@@ -12,8 +12,8 @@ from services.chat_services import (
     get_room_by_id,
     get_rooms_by_participant_id,
     add_room,
-    edit_room,
-    remove_room,
+    edit_room_by_id,
+    remove_room_by_id,
     get_recent_messages_by_room_id,
 )
 
@@ -67,7 +67,7 @@ def update_room(
     user_id=Depends(role_check("user", "admin")),
 ):
 
-    db_room = edit_room(db=db, room_id=id, user_id=user_id, chat_room=chat_room)
+    db_room = edit_room_by_id(db=db, room_id=id, user_id=user_id, chat_room=chat_room)
 
     if not db_room:
         return JSONResponse(
@@ -86,7 +86,7 @@ def delete_room(
     user_id=Depends(role_check("user", "admin")),
 ):
 
-    db_room = remove_room(db=db, room_id=id, user_id=user_id, chat_room=chat_room)
+    db_room = remove_room_by_id(db=db, room_id=id, user_id=user_id, chat_room=chat_room)
 
     if not db_room:
         return JSONResponse(

@@ -7,6 +7,15 @@ from datetime import datetime
 from services.user_services import get_user_by_id
 
 
+def get_all_rooms(
+    db: Session,
+):
+
+    db_room = db.query(Room).all()
+
+    return db_room
+
+
 def get_room_by_id(
     db: Session,
     room_id: int,
@@ -47,16 +56,17 @@ def add_room(db: Session, chat_room: ChatRoomCreate, admin_id: int):
     return db_room
 
 
-def edit_room(
+def edit_room_by_id(
     db: Session,
     room_id: int,
     user_id: int,
     chat_room: ChatRoomUpdate,
+    admin_check: bool = True,
 ):
 
     db_room = db.query(Room).filter(Room.id == room_id).first()
 
-    if db_room and db_room.admin_id == user_id:
+    if db_room and (not admin_check or db_room.admin_id == user_id):
 
         if chat_room.name:
             db_room.name = chat_room.name
@@ -73,15 +83,13 @@ def edit_room(
     return None
 
 
-def remove_room(
-    db: Session,
-    room_id: int,
-    user_id: int,
+def remove_room_by_id(
+    db: Session, room_id: int, user_id: int, admin_check: bool = True
 ):
 
     db_room = db.query(Room).filter(Room.id == room_id).first()
 
-    if db_room and db_room.admin_id == user_id:
+    if db_room and (not admin_check or db_room.admin_id == user_id):
 
         db.delete(db_room)
 
