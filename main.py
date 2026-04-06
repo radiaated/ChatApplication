@@ -6,12 +6,16 @@ from api.endpoints.chat import chat_router
 from api.endpoints.admin import admin_router
 from ws.endpoints.chat_ws import chat_ws
 
+from admin.setup import setup_admin
+
 
 # Ensure database tables are created on startup
 import db.init_db
 
 # Initialize FastAPI app
 app = FastAPI()
+
+setup_admin(app)
 
 # Include API routers
 app.include_router(auth_router, prefix="/api/auth")
