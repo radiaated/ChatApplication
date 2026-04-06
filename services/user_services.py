@@ -1,3 +1,5 @@
+from fastapi import HTTPException, status
+
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
@@ -7,6 +9,12 @@ from schemas.user import UserCreate, UserUpdate
 
 
 def add_user(db: Session, user: UserCreate):
+
+    if get_user_by_email_or_username(db=db, username=user.username, email=user.email):
+        raise HTTPException(
+            detail="User with the given username or email already exists",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
 
     db_user = User(
         username=user.username,
@@ -27,6 +35,12 @@ def edit_user_by_id(
     user_id: int,
     user: UserUpdate,
 ):
+
+    if get_user_by_email_or_username(db=db, username=user.username, email=user.email):
+        raise HTTPException(
+            detail="User with the given username or email already exists",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
 
     db_user = db.query(User).filter(User.id == user_id).first()
 
@@ -91,8 +105,11 @@ def get_user_by_id(db: Session, id: int):
         .first()
     )
 
-    return {
-        "email": db_user[0],
-        "username": db_user[1],
-        "role": db_user[2].value,
-    }
+    if db_user:
+        return {
+            "email": db_user[0],
+            "username": db_user[1],
+            "role": db_user[2].value,
+        }
+
+    return None

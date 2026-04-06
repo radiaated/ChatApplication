@@ -1,4 +1,10 @@
-from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
+from fastapi import (
+    APIRouter,
+    Depends,
+    WebSocket,
+    WebSocketException,
+    WebSocketDisconnect,
+)
 
 from ws.deps import get_auth_user_ws
 from api.deps import get_db
@@ -7,6 +13,7 @@ from services.chat_services import (
     add_participant_to_room,
     add_message,
     get_recent_messages_by_room_id,
+    get_room_by_id,
 )
 from schemas.chat import ChatMessage, ChatMessageResponse
 
@@ -21,11 +28,32 @@ async def chat_room(
     ws: WebSocket, id: int, user_id=Depends(get_auth_user_ws), db=Depends(get_db)
 ):
 
-    await manager.connect(websocket=ws, room_id=id, user_id=user_id)
+    room = get_room_by_id(db=db, room_id=id)
 
-    add_participant_to_room(db=db, room_id=id, user_id=user_id)
+    if not room:
+        await manager.disconnect(
+            room_id=id, user_id=user_id, code=1008, reason="Room doesn't exist."
+        )
+        return
 
     user_detail = get_user_by_id(db=db, id=user_id)
+
+    if not user_detail:
+        await manager.disconnect(
+            room_id=id, user_id=user_id, code=1008, reason="User doesn't exist."
+        )
+        return
+
+    await manager.connect(websocket=ws, room_id=id, user_id=user_id)
+
+    is_added = add_participant_to_room(db=db, room_id=id, user_id=user_id)
+
+    if not is_added:
+
+        await manager.disconnect(
+            room_id=id, user_id=user_id, code=1000, reason="Failed to join the room."
+        )
+        return
 
     await manager.broadcast(
         message="%s has joined the room" % user_detail["username"],
@@ -77,6 +105,14 @@ async def chat_room(
 
         print("Client disconnected")
 
-    except Exception as e:
+    except WebSocketException as ex:
 
-        print(f"WebSocket error: {e}")
+        print(f"WebSocket error: {ex}")
+
+    except Exception as ex:
+
+        print(f"WebSocket error: {ex}")
+
+    finally:
+
+        manager.disconnect(room_id=id, user_id=id)

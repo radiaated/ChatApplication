@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from api.deps import get_db
 from schemas.user import UserCreate, UserLogin
 from schemas.token import TokenResponse
-from services.user_services import add_user, get_user_by_email_or_username
+from services.user_services import add_user
 from services.auth_services import authenticate_user
 
 auth_router = APIRouter()
@@ -12,12 +12,6 @@ auth_router = APIRouter()
 
 @auth_router.post("/signup/")
 async def signup(user: UserCreate, db=Depends(get_db)):
-
-    if get_user_by_email_or_username(db=db, username=user.username, email=user.email):
-        return JSONResponse(
-            content={"detail": "User with the given username or email already exists"},
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
 
     user = add_user(db=db, user=user)
 
@@ -34,8 +28,8 @@ async def signin(user: UserLogin, db=Depends(get_db)):
     if not access_token:
 
         response = JSONResponse(
-            content={"detail": "Invalid user."},
-            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"detail": "Invalid credentials."},
+            status_code=status.HTTP_401_UNAUTHORIZED,
         )
 
         return response

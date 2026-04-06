@@ -9,38 +9,39 @@ from schemas.chat import (
     ChatMessageResponse,
 )
 from services.chat_services import (
-    get_room_by_id,
     get_rooms_by_participant_id,
     add_room,
     edit_room_by_id,
     remove_room_by_id,
     get_recent_messages_by_room_id,
+    check_room_participant,
 )
 
 from typing import List
-
 from datetime import datetime
 
 
 chat_router = APIRouter()
 
 
-@chat_router.get("/room/{id}/", response_model=ChatRoomResponse)
-def get_room(id: int, db=Depends(get_db)):
+# @chat_router.get("/room/{id}/", response_model=ChatRoomResponse)
+# def get_room(id: int, db=Depends(get_db)):
 
-    db_room = get_room_by_id(db=db, room_id=id)
+#     db_room = get_room_by_id(db=db, room_id=id)
 
-    if not db_room:
-        return JSONResponse(
-            content={"detail": "Room doesn't exist."},
-            status_code=status.HTTP_404_NOT_FOUND,
-        )
+#     if not db_room:
+#         return JSONResponse(
+#             content={"detail": "Room doesn't exist."},
+#             status_code=status.HTTP_404_NOT_FOUND,
+#         )
 
-    return db_room
+#     return db_room
 
 
 @chat_router.get("/room/", response_model=List[ChatRoomResponse])
-def get_rooms(db=Depends(get_db), user_id=Depends(role_check("user", "admin"))):
+def get_pariticipant_rooms(
+    db=Depends(get_db), user_id=Depends(role_check("user", "admin"))
+):
 
     db_rooms = get_rooms_by_participant_id(db=db, participant_id=user_id)
 
@@ -98,15 +99,20 @@ def delete_room(
 
 
 @chat_router.get("/room/{id}/messages/", response_model=List[ChatMessageResponse])
-def get_recent_messages(
+def get_recent_room_messages(
     id: int,
     cursor: str,
     limit: int | None,
     db=Depends(get_db),
     user_id=Depends(role_check("user", "admin")),
 ):
-    # TODO
-    # Add a check if the user is the pariticpant of the room
+
+    if not check_room_participant(db=db, room_id=id, user_id=user_id):
+
+        return JSONResponse(
+            content={"detail": "Unauthorized access."},
+            status_code=status.HTTP_401_UNAUTHORIZED,
+        )
 
     db_messages = get_recent_messages_by_room_id(
         db=db, room_id=id, cursor=datetime.fromisoformat(cursor), limit=limit

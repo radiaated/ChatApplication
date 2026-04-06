@@ -4,8 +4,6 @@ from models.chat import Message, Room
 from models.user import User
 from datetime import datetime
 
-from services.user_services import get_user_by_id
-
 
 def get_all_rooms(
     db: Session,
@@ -135,11 +133,30 @@ def add_participant_to_room(db: Session, room_id: int, user_id: int):
 
     db_user = db.query(User).filter(User.id == user_id).first()
 
-    if db_user not in db_room.participants:
+    if db_room and db_user:
 
-        db_room.participants.append(db_user)
+        if db_user not in db_room.participants:
 
-    db.commit()
+            db_room.participants.append(db_user)
+
+        db.commit()
+
+        return True
+
+    return False
+
+
+def check_room_participant(db: Session, room_id: int, user_id: int):
+
+    db_room = db.query(Room).filter(Room.id == room_id).first()
+
+    db_user = db.query(User).filter(User.id == user_id).first()
+
+    if db_user in db_room.participants:
+
+        return True
+
+    return False
 
 
 def add_message(
