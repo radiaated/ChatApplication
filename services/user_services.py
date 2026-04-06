@@ -3,12 +3,12 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
-from models.user import User, UserRole
+from models.user import User
 from core.security import hash_password
 from schemas.user import UserCreate, UserUpdate
 
 
-def add_user(db: Session, user: UserCreate):
+def create_user(db: Session, user: UserCreate):
 
     if get_user_by_email_or_username(db=db, username=user.username, email=user.email):
         raise HTTPException(
@@ -30,7 +30,7 @@ def add_user(db: Session, user: UserCreate):
     return db_user
 
 
-def edit_user_by_id(
+def update_user(
     db: Session,
     user_id: int,
     user: UserUpdate,
@@ -64,7 +64,7 @@ def edit_user_by_id(
     return None
 
 
-def remove_user_by_id(
+def delete_user(
     db: Session,
     user_id: int,
 ):
@@ -82,21 +82,12 @@ def remove_user_by_id(
     return None
 
 
-def get_all_users(db: Session):
+def get_users(db: Session):
 
     return db.query(User).all()
 
 
-def get_user_by_email_or_username(db: Session, email: str, username: str):
-
-    return (
-        db.query(User)
-        .filter(or_(User.username == username, User.email == email))
-        .first()
-    )
-
-
-def get_user_by_id(db: Session, id: int):
+def get_user(db: Session, id: int):
 
     db_user = (
         db.query(User)
@@ -113,3 +104,12 @@ def get_user_by_id(db: Session, id: int):
         }
 
     return None
+
+
+def get_user_by_email_or_username(db: Session, email: str, username: str):
+
+    return (
+        db.query(User)
+        .filter(or_(User.username == username, User.email == email))
+        .first()
+    )

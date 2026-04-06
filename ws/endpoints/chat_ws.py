@@ -8,14 +8,8 @@ from fastapi import (
 
 from ws.deps import get_auth_user_ws
 from api.deps import get_db
-from services.user_services import get_user_by_id
-from services.chat_services import (
-    add_participant_to_room,
-    add_message,
-    get_recent_messages_by_room_id,
-    get_room_by_id,
-)
-from schemas.chat import ChatMessage, ChatMessageResponse
+from services import user_services, chat_services
+from schemas.chat import ChatMessageRequest, ChatMessageResponse
 
 from core.connection_manager import manager
 
@@ -28,7 +22,7 @@ async def chat_room(
     ws: WebSocket, id: int, user_id=Depends(get_auth_user_ws), db=Depends(get_db)
 ):
 
-    room = get_room_by_id(db=db, room_id=id)
+    room = chat_services.get_room(db=db, room_id=id)
 
     if not room:
         await manager.disconnect(
@@ -36,7 +30,7 @@ async def chat_room(
         )
         return
 
-    user_detail = get_user_by_id(db=db, id=user_id)
+    user_detail = user_services.get_user(db=db, id=user_id)
 
     if not user_detail:
         await manager.disconnect(
@@ -46,7 +40,7 @@ async def chat_room(
 
     await manager.connect(websocket=ws, room_id=id, user_id=user_id)
 
-    is_added = add_participant_to_room(db=db, room_id=id, user_id=user_id)
+    is_added = chat_services.add_room_participant(db=db, room_id=id, user_id=user_id)
 
     if not is_added:
 
@@ -60,7 +54,7 @@ async def chat_room(
         room_id=id,
     )
 
-    db_messages = get_recent_messages_by_room_id(db=db, room_id=id)
+    db_messages = chat_services.get_recent_room_messages(db=db, room_id=id)
 
     if db_messages:
 
@@ -81,9 +75,9 @@ async def chat_room(
         while True:
             data = await ws.receive_json()
 
-            chat_message = ChatMessage(**data)
+            chat_message = ChatMessageRequest(**data)
 
-            db_message = add_message(
+            db_message = chat_services.create_message(
                 db=db,
                 room_id=id,
                 message=chat_message,

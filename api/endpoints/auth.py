@@ -4,8 +4,7 @@ from fastapi.responses import JSONResponse
 from api.deps import get_db
 from schemas.user import UserCreate, UserLogin
 from schemas.token import TokenResponse
-from services.user_services import add_user
-from services.auth_services import authenticate_user
+from services import user_services, auth_services
 
 auth_router = APIRouter()
 
@@ -13,7 +12,7 @@ auth_router = APIRouter()
 @auth_router.post("/signup/")
 async def signup(user: UserCreate, db=Depends(get_db)):
 
-    user = add_user(db=db, user=user)
+    user = user_services.add_user(db=db, user=user)
 
     return JSONResponse(
         content={"detail": "User created."}, status_code=status.HTTP_201_CREATED
@@ -23,7 +22,7 @@ async def signup(user: UserCreate, db=Depends(get_db)):
 @auth_router.post("/signin/", response_model=TokenResponse)
 async def signin(user: UserLogin, db=Depends(get_db)):
 
-    access_token = authenticate_user(db=db, user=user)
+    access_token = auth_services.authenticate_user(db=db, user=user)
 
     if not access_token:
 

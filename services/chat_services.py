@@ -1,11 +1,11 @@
 from sqlalchemy.orm import Session
-from schemas.chat import ChatMessageResponse, ChatRoomCreate, ChatRoomUpdate
+from schemas.chat import ChatMessageRequest, ChatRoomCreate, ChatRoomUpdate
 from models.chat import Message, Room
 from models.user import User
 from datetime import datetime
 
 
-def get_all_rooms(
+def get_rooms(
     db: Session,
 ):
 
@@ -14,7 +14,7 @@ def get_all_rooms(
     return db_room
 
 
-def get_room_by_id(
+def get_room(
     db: Session,
     room_id: int,
 ):
@@ -24,7 +24,7 @@ def get_room_by_id(
     return db_room
 
 
-def get_rooms_by_participant_id(
+def get_participant_rooms(
     db: Session,
     participant_id: int,
 ):
@@ -36,7 +36,7 @@ def get_rooms_by_participant_id(
     return db_rooms
 
 
-def add_room(db: Session, chat_room: ChatRoomCreate, admin_id: int):
+def create_room(db: Session, chat_room: ChatRoomCreate, admin_id: int):
 
     db_room = Room(
         name=chat_room.name, description=chat_room.description, admin_id=admin_id
@@ -54,7 +54,7 @@ def add_room(db: Session, chat_room: ChatRoomCreate, admin_id: int):
     return db_room
 
 
-def edit_room_by_id(
+def update_room(
     db: Session,
     room_id: int,
     user_id: int,
@@ -81,9 +81,7 @@ def edit_room_by_id(
     return None
 
 
-def remove_room_by_id(
-    db: Session, room_id: int, user_id: int, admin_check: bool = True
-):
+def delete_room(db: Session, room_id: int, user_id: int, admin_check: bool = True):
 
     db_room = db.query(Room).filter(Room.id == room_id).first()
 
@@ -98,7 +96,7 @@ def remove_room_by_id(
     return None
 
 
-def get_recent_messages_by_room_id(
+def get_recent_room_messages(
     db: Session,
     room_id: int,
     cursor: datetime = None,
@@ -127,7 +125,7 @@ def get_recent_messages_by_room_id(
     return db_messages
 
 
-def add_participant_to_room(db: Session, room_id: int, user_id: int):
+def add_room_participant(db: Session, room_id: int, user_id: int):
 
     db_room = db.query(Room).filter(Room.id == room_id).first()
 
@@ -159,8 +157,8 @@ def check_room_participant(db: Session, room_id: int, user_id: int):
     return False
 
 
-def add_message(
-    db: Session, room_id: int, message: ChatMessageResponse, sender_id: int
+def create_message(
+    db: Session, room_id: int, message: ChatMessageRequest, sender_id: int
 ):
 
     db_message = Message(

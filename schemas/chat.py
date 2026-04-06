@@ -31,6 +31,11 @@ class ChatMessage(BaseModel):
     datetime_sent: datetime
 
 
+class ChatMessageRequest(ChatMessage):
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class ChatMessageResponse(ChatMessage):
 
     model_config = ConfigDict(from_attributes=True)
