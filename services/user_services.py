@@ -3,7 +3,7 @@ from sqlalchemy import or_
 
 from models.user import User, UserRole
 from core.security import hash_password
-from schemas.user import UserCreate
+from schemas.user import UserCreate, UserUpdate
 
 
 def add_user(db: Session, user: UserCreate):
@@ -20,6 +20,53 @@ def add_user(db: Session, user: UserCreate):
     db.refresh(db_user)
 
     return db_user
+
+
+def edit_user_by_id(
+    db: Session,
+    user_id: int,
+    user: UserUpdate,
+):
+
+    db_user = db.query(User).filter(User.id == user_id).first()
+
+    if db_user:
+
+        if user.username:
+            db_user.username = user.username
+
+        if user.email:
+            db_user.email = user.email
+
+        if user.role:
+            db_user.role = user.role
+
+        db.commit()
+
+        db.refresh(db_user)
+
+        return db_user
+
+    return None
+
+
+def remove_user_by_id(
+    db: Session,
+    user_id: int,
+    user: UserUpdate,
+):
+
+    db_user = db.query(User).filter(User.id == user_id).first()
+
+    if db_user:
+
+        db.delete(user)
+
+        db.commit()
+
+        return db_user
+
+    return None
 
 
 def get_all_users(db: Session):

@@ -54,6 +54,12 @@ class UserCreate(User):
         return v
 
 
+class UserUpdate(User):
+    email: Optional[EmailStr] = None
+    username: Optional[str] = None
+    role: Optional[UserRole] = None
+
+
 class UserLogin(BaseModel):
     username: str
     password: str
