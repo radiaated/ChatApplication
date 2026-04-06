@@ -50,6 +50,15 @@ def retrieve_participant_room(
         db=db, room_id=id, participant_id=user_id
     )
 
+    if not db_room:
+
+        response = JSONResponse(
+            content={"detail": "Room doesn't exist."},
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+        return response
+
     return db_room
 
 
@@ -61,6 +70,15 @@ def create_room(
 ):
 
     db_room = chat_services.create_room(db=db, chat_room=chat_room, admin_id=user_id)
+
+    if not db_room:
+
+        response = JSONResponse(
+            content={"detail": "Failed to create a room."},
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+        return response
 
     return db_room
 

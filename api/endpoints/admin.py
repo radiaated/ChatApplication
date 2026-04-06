@@ -42,6 +42,14 @@ async def create_user(
 
     db_user = user_services.create_user(db=db, user=user)
 
+    if not db_user:
+
+        response = JSONResponse(
+            content={"detail": "Failed to create a user."},
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+        return response
+
     return db_user
 
 
@@ -116,6 +124,14 @@ async def create_room(
         db=db, chat_room=room, admin_id=user_id, admin_check=False
     )
 
+    if not db_room:
+
+        response = JSONResponse(
+            content={"detail": "Failed to create a room."},
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+        return response
+
     return db_room
 
 
@@ -148,7 +164,9 @@ async def delete_room(
     id: int, db=Depends(get_db), user_id=Depends(role_check("admin"))
 ):
 
-    room = chat_services.delete_room(db=db, room_id=id, user_id=id, admin_check=False)
+    room = chat_services.delete_room(
+        db=db, room_id=id, user_id=user_id, admin_check=False
+    )
 
     if not room:
 

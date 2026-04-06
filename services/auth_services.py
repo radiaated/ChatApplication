@@ -5,7 +5,7 @@ from core.security import verify_password, create_access_token
 from services.user_services import get_user_by_email_or_username
 
 
-def authenticate_user(db: Session, user: UserLogin):
+def authenticate_user(db: Session, user: UserLogin) -> str | None:
 
     db_user = get_user_by_email_or_username(
         db=db, email=user.username, username=user.username
