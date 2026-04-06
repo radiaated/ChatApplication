@@ -5,6 +5,8 @@ from jose import jwt
 from db.session import Session
 from core.config import settings
 
+from typing import List
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login/")
 
 
@@ -39,10 +41,10 @@ def get_auth_user(token: str = Depends(oauth2_scheme)):
         raise HTTPException(status_code=401, detail="Invalid token")
 
 
-def role_check(role: str):
+def role_check(*args: List[str]):
     def role_checker(auth_user: dict = Depends(get_auth_user)):
-        if auth_user[1] != role:
+        if auth_user[1] not in args:
             raise HTTPException(status_code=403, detail="Forbidden")
-        return auth_user[0]
+        return int(auth_user[0])
 
     return role_checker

@@ -56,21 +56,21 @@ def edit_room(
 
     db_room = db.query(Room).filter(Room.id == room_id).first()
 
-    if db_room.admin_id != user_id:
+    if db_room and db_room.admin_id == user_id:
 
-        return None
+        if chat_room.name:
+            db_room.name = chat_room.name
 
-    if chat_room.name:
-        db_room.name = chat_room.name
+        if chat_room.description:
+            db_room.description = chat_room.description
 
-    if chat_room.description:
-        db_room.description = chat_room.description
+        db.commit()
 
-    db.commit()
+        db.refresh(db_room)
 
-    db.refresh(db_room)
+        return db_room
 
-    return db_room
+    return None
 
 
 def remove_room(
@@ -81,15 +81,15 @@ def remove_room(
 
     db_room = db.query(Room).filter(Room.id == room_id).first()
 
-    if db_room.admin_id != user_id:
+    if db_room and db_room.admin_id == user_id:
 
-        return None
+        db.delete(db_room)
 
-    db.delete(db_room)
+        db.commit()
 
-    db.commit()
+        return db_room
 
-    return db_room
+    return None
 
 
 def get_recent_messages_by_room_id(
