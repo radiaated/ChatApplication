@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
-from api.deps import get_db, get_auth_user
+from api.deps import get_db, role_check
 
 from schemas.chat import (
     ChatRoomCreate,
@@ -12,8 +12,8 @@ from services.chat_services import (
     get_room_by_id,
     get_rooms_by_participant_id,
     add_room,
-    edit_room,
-    remove_room,
+    edit_room_by_id,
+    remove_room_by_id,
     get_recent_messages_by_room_id,
 )
 
@@ -40,7 +40,7 @@ def get_room(id: int, db=Depends(get_db)):
 
 
 @chat_router.get("/room/", response_model=List[ChatRoomResponse])
-def get_rooms(db=Depends(get_db), user_id=Depends(get_auth_user)):
+def get_rooms(db=Depends(get_db), user_id=Depends(role_check("user", "admin"))):
 
     db_rooms = get_rooms_by_participant_id(db=db, participant_id=user_id)
 
@@ -49,7 +49,9 @@ def get_rooms(db=Depends(get_db), user_id=Depends(get_auth_user)):
 
 @chat_router.post("/room/", response_model=ChatRoomResponse)
 def create_room(
-    chat_room: ChatRoomCreate, db=Depends(get_db), user_id=Depends(get_auth_user)
+    chat_room: ChatRoomCreate,
+    db=Depends(get_db),
+    user_id=Depends(role_check("user", "admin")),
 ):
 
     db_room = add_room(db=db, chat_room=chat_room, admin_id=user_id)
@@ -62,10 +64,10 @@ def update_room(
     id: int,
     chat_room: ChatRoomUpdate,
     db=Depends(get_db),
-    user_id=Depends(get_auth_user),
+    user_id=Depends(role_check("user", "admin")),
 ):
 
-    db_room = edit_room(db=db, room_id=id, user_id=user_id, chat_room=chat_room)
+    db_room = edit_room_by_id(db=db, room_id=id, user_id=user_id, chat_room=chat_room)
 
     if not db_room:
         return JSONResponse(
@@ -81,10 +83,10 @@ def delete_room(
     id: int,
     chat_room: ChatRoomUpdate,
     db=Depends(get_db),
-    user_id=Depends(get_auth_user),
+    user_id=Depends(role_check("user", "admin")),
 ):
 
-    db_room = remove_room(db=db, room_id=id, user_id=user_id, chat_room=chat_room)
+    db_room = remove_room_by_id(db=db, room_id=id, user_id=user_id, chat_room=chat_room)
 
     if not db_room:
         return JSONResponse(
@@ -101,7 +103,7 @@ def get_recent_messages(
     cursor: str,
     limit: int | None,
     db=Depends(get_db),
-    user_id=Depends(get_auth_user),
+    user_id=Depends(role_check("user", "admin")),
 ):
     # TODO
     # Add a check if the user is the pariticpant of the room

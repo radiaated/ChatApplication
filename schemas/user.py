@@ -1,12 +1,15 @@
 from pydantic import BaseModel, EmailStr, ConfigDict, field_validator
-
+from models.user import UserRole
 import re
+
+from typing import Optional
 
 
 class User(BaseModel):
 
     email: EmailStr
     username: str
+    role: Optional[UserRole] = UserRole.USER
 
     @field_validator("username")
     @classmethod
@@ -49,6 +52,12 @@ class UserCreate(User):
             raise ValueError("Password and confirm password does not match.")
 
         return v
+
+
+class UserUpdate(User):
+    email: Optional[EmailStr] = None
+    username: Optional[str] = None
+    role: Optional[UserRole] = None
 
 
 class UserLogin(BaseModel):

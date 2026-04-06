@@ -7,6 +7,15 @@ from datetime import datetime
 from services.user_services import get_user_by_id
 
 
+def get_all_rooms(
+    db: Session,
+):
+
+    db_room = db.query(Room).all()
+
+    return db_room
+
+
 def get_room_by_id(
     db: Session,
     room_id: int,
@@ -47,49 +56,48 @@ def add_room(db: Session, chat_room: ChatRoomCreate, admin_id: int):
     return db_room
 
 
-def edit_room(
+def edit_room_by_id(
     db: Session,
     room_id: int,
     user_id: int,
     chat_room: ChatRoomUpdate,
+    admin_check: bool = True,
 ):
 
     db_room = db.query(Room).filter(Room.id == room_id).first()
 
-    if db_room.admin_id != user_id:
+    if db_room and (not admin_check or db_room.admin_id == user_id):
 
-        return None
+        if chat_room.name:
+            db_room.name = chat_room.name
 
-    if chat_room.name:
-        db_room.name = chat_room.name
+        if chat_room.description:
+            db_room.description = chat_room.description
 
-    if chat_room.description:
-        db_room.description = chat_room.description
+        db.commit()
 
-    db.commit()
+        db.refresh(db_room)
 
-    db.refresh(db_room)
+        return db_room
 
-    return db_room
+    return None
 
 
-def remove_room(
-    db: Session,
-    room_id: int,
-    user_id: int,
+def remove_room_by_id(
+    db: Session, room_id: int, user_id: int, admin_check: bool = True
 ):
 
     db_room = db.query(Room).filter(Room.id == room_id).first()
 
-    if db_room.admin_id != user_id:
+    if db_room and (not admin_check or db_room.admin_id == user_id):
 
-        return None
+        db.delete(db_room)
 
-    db.delete(db_room)
+        db.commit()
 
-    db.commit()
+        return db_room
 
-    return db_room
+    return None
 
 
 def get_recent_messages_by_room_id(
