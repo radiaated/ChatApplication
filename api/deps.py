@@ -27,10 +27,12 @@ def get_auth_user(token: str = Depends(oauth2_scheme)):
 
         if not user_id:
 
-            raise HTTPException(status_code=402, detail="Invalid token")
+            raise HTTPException(status_code=401, detail="Invalid token")
 
         return int(user_id)
 
-    except:
+    except Exception as ex:
 
-        raise HTTPException(status_code=402, detail="Invalid token")
+        print(ex)
+
+        raise HTTPException(status_code=401, detail="Invalid token")
