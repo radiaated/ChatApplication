@@ -6,13 +6,13 @@ from core.security import hash_password
 from schemas.user import UserCreate
 
 
-def create_user(db: Session, user: UserCreate):
+def add_user(db: Session, user: UserCreate):
 
     db_user = User(
         username=user.username,
         email=user.email,
         password=hash_password(user.password),
-        role=UserRole.USER,
+        role=user.role,
     )
 
     db.add(db_user)
@@ -20,6 +20,11 @@ def create_user(db: Session, user: UserCreate):
     db.refresh(db_user)
 
     return db_user
+
+
+def get_all_users(db: Session):
+
+    return db.query(User).all()
 
 
 def get_user_by_email_or_username(db: Session, email: str, username: str):

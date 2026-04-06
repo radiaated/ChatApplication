@@ -24,15 +24,25 @@ def get_auth_user(token: str = Depends(oauth2_scheme)):
 
         payload = jwt.decode(token, settings.SECRET_KEY, [settings.JWT_ALGORITHM])
         user_id = payload.get("sub")
+        user_role = payload.get("role")
 
-        if not user_id:
+        if not user_id or not user_role:
 
             raise HTTPException(status_code=401, detail="Invalid token")
 
-        return int(user_id)
+        return user_id, user_role
 
     except Exception as ex:
 
         print(ex)
 
         raise HTTPException(status_code=401, detail="Invalid token")
+
+
+def role_check(role: str):
+    def role_checker(auth_user: dict = Depends(get_auth_user)):
+        if auth_user[1] != role:
+            raise HTTPException(status_code=403, detail="Forbidden")
+        return auth_user[0]
+
+    return role_checker
