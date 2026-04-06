@@ -28,6 +28,6 @@ def get_auth_user_ws(websocket: WebSocket):
 
     except Exception as ex:
 
-        print("r", ex)
+        print(ex)
 
         raise WebSocketException(reason="Invalid token.", code=3000)

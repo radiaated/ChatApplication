@@ -1,0 +1,54 @@
+from sqlalchemy import Table, Integer, Column, String, DateTime, ForeignKey, func
+from sqlalchemy.orm import relationship
+
+from db.base import Base
+from models.user import User
+
+room_participants = Table(
+    "room_participants",
+    Base.metadata,
+    Column("user_id", ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
+    Column("room_id", ForeignKey("rooms.id", ondelete="CASCADE"), primary_key=True),
+)
+
+
+class Room(Base):
+
+    __tablename__ = "rooms"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(32), nullable=False)
+    description = Column(String(64), nullable=False)
+
+    admin_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+
+    admin = relationship("User", back_populates="admin_rooms", foreign_keys=[admin_id])
+    messages = relationship("Message", back_populates="room", uselist=False)
+    participants = relationship(
+        "User", secondary=room_participants, back_populates="participant_rooms"
+    )
+
+
+class Message(Base):
+
+    __tablename__ = "messages"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    text = Column(String, nullable=False)
+    datetime_sent = Column(
+        DateTime,
+        nullable=False,
+    )
+    datetime_delivered = Column(DateTime, nullable=False, default=func.now())
+
+    sender_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    room_id = Column(
+        Integer, ForeignKey("rooms.id", ondelete="CASCADE"), nullable=False
+    )
+
+    user = relationship("User", back_populates="messages")
+    room = relationship("Room", back_populates="messages")
