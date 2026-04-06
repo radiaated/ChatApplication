@@ -1,22 +1,24 @@
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
-
 from typing import List
 
 
 class ChatRoomCreate(BaseModel):
+    """Schema for creating a chat room."""
 
     name: str
     description: str
 
 
 class ChatRoomUpdate(BaseModel):
+    """Schema for updating a chat room (partial update allowed)."""
 
     name: str | None = None
     description: str | None = None
 
 
 class ChatRoomResponse(BaseModel):
+    """Schema for returning chat room details."""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -27,16 +29,21 @@ class ChatRoomResponse(BaseModel):
 
 
 class ChatMessage(BaseModel):
+    """Base schema for chat messages."""
 
     message: str
     datetime_sent: datetime
 
 
 class ChatMessageRequest(ChatMessage):
+    """Schema for sending a chat message (request)."""
+
     pass
 
 
 class ChatMessageResponse(ChatMessage):
+    """Schema for returning a chat message (response)."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: int
@@ -44,6 +51,7 @@ class ChatMessageResponse(ChatMessage):
 
 
 class ChatRoomMessageCountResponse(BaseModel):
+    """Schema for returning chat room with message count."""
 
     id: int
     name: str
@@ -51,6 +59,7 @@ class ChatRoomMessageCountResponse(BaseModel):
 
 
 class UserMessageCount(BaseModel):
+    """Schema for returning a user's message count."""
 
     user_id: int
     username: str
@@ -58,6 +67,7 @@ class UserMessageCount(BaseModel):
 
 
 class UserRoomCount(BaseModel):
+    """Schema for returning a user's room count."""
 
     user_id: int
     username: str
@@ -65,6 +75,7 @@ class UserRoomCount(BaseModel):
 
 
 class UserActivityResponse(BaseModel):
+    """Schema for returning user activity across messages and rooms."""
 
     messages_count: List[UserMessageCount]
     rooms_count: List[UserRoomCount]
