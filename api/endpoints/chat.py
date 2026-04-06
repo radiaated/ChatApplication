@@ -8,43 +8,58 @@ from schemas.chat import (
     ChatRoomResponse,
     ChatMessageResponse,
 )
-from services.chat_services import (
-    get_room_by_id,
-    get_rooms_by_participant_id,
-    add_room,
-    edit_room_by_id,
-    remove_room_by_id,
-    get_recent_messages_by_room_id,
-)
+from services import chat_services
 
 from typing import List
-
 from datetime import datetime
 
 
 chat_router = APIRouter()
 
 
-@chat_router.get("/room/{id}/", response_model=ChatRoomResponse)
-def get_room(id: int, db=Depends(get_db)):
+# @chat_router.get("/room/{id}/", response_model=ChatRoomResponse)
+# def get_room(id: int, db=Depends(get_db)):
 
-    db_room = get_room_by_id(db=db, room_id=id)
+#     db_room = get_room_by_id(db=db, room_id=id)
+
+#     if not db_room:
+#         return JSONResponse(
+#             content={"detail": "Room doesn't exist."},
+#             status_code=status.HTTP_404_NOT_FOUND,
+#         )
+
+#     return db_room
+
+
+@chat_router.get("/room/", response_model=List[ChatRoomResponse])
+def list_participant_rooms(
+    db=Depends(get_db), user_id=Depends(role_check("user", "admin"))
+):
+
+    db_rooms = chat_services.get_participant_rooms(db=db, participant_id=user_id)
+
+    return db_rooms
+
+
+@chat_router.get("/room/{id}/", response_model=ChatRoomResponse)
+def retrieve_participant_room(
+    id: int, db=Depends(get_db), user_id=Depends(role_check("user", "admin"))
+):
+
+    db_room = chat_services.get_participant_room(
+        db=db, room_id=id, participant_id=user_id
+    )
 
     if not db_room:
-        return JSONResponse(
+
+        response = JSONResponse(
             content={"detail": "Room doesn't exist."},
             status_code=status.HTTP_404_NOT_FOUND,
         )
 
+        return response
+
     return db_room
-
-
-@chat_router.get("/room/", response_model=List[ChatRoomResponse])
-def get_rooms(db=Depends(get_db), user_id=Depends(role_check("user", "admin"))):
-
-    db_rooms = get_rooms_by_participant_id(db=db, participant_id=user_id)
-
-    return db_rooms
 
 
 @chat_router.post("/room/", response_model=ChatRoomResponse)
@@ -54,7 +69,16 @@ def create_room(
     user_id=Depends(role_check("user", "admin")),
 ):
 
-    db_room = add_room(db=db, chat_room=chat_room, admin_id=user_id)
+    db_room = chat_services.create_room(db=db, chat_room=chat_room, admin_id=user_id)
+
+    if not db_room:
+
+        response = JSONResponse(
+            content={"detail": "Failed to create a room."},
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+        return response
 
     return db_room
 
@@ -67,7 +91,9 @@ def update_room(
     user_id=Depends(role_check("user", "admin")),
 ):
 
-    db_room = edit_room_by_id(db=db, room_id=id, user_id=user_id, chat_room=chat_room)
+    db_room = chat_services.update_room(
+        db=db, room_id=id, user_id=user_id, chat_room=chat_room
+    )
 
     if not db_room:
         return JSONResponse(
@@ -86,7 +112,9 @@ def delete_room(
     user_id=Depends(role_check("user", "admin")),
 ):
 
-    db_room = remove_room_by_id(db=db, room_id=id, user_id=user_id, chat_room=chat_room)
+    db_room = chat_services.delete_room(
+        db=db, room_id=id, user_id=user_id, chat_room=chat_room
+    )
 
     if not db_room:
         return JSONResponse(
@@ -98,18 +126,26 @@ def delete_room(
 
 
 @chat_router.get("/room/{id}/messages/", response_model=List[ChatMessageResponse])
-def get_recent_messages(
+def retrieve_recent_room_messages(
     id: int,
-    cursor: str,
     limit: int | None,
+    cursor: str | None = None,
     db=Depends(get_db),
     user_id=Depends(role_check("user", "admin")),
 ):
-    # TODO
-    # Add a check if the user is the pariticpant of the room
 
-    db_messages = get_recent_messages_by_room_id(
-        db=db, room_id=id, cursor=datetime.fromisoformat(cursor), limit=limit
+    if not chat_services.check_room_participant(db=db, room_id=id, user_id=user_id):
+
+        return JSONResponse(
+            content={"detail": "Unauthorized access."},
+            status_code=status.HTTP_401_UNAUTHORIZED,
+        )
+
+    db_messages = chat_services.get_recent_room_messages(
+        db=db,
+        room_id=id,
+        cursor=datetime.fromisoformat(cursor) if cursor else None,
+        limit=limit,
     )
 
     messages = [

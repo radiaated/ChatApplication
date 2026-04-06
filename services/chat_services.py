@@ -1,162 +1,276 @@
+from typing import List, Optional
+from sqlalchemy import func
 from sqlalchemy.orm import Session
-from schemas.chat import ChatMessageResponse, ChatRoomCreate, ChatRoomUpdate
+from sqlalchemy.exc import SQLAlchemyError
+
+from schemas.chat import (
+    ChatMessageRequest,
+    ChatRoomCreate,
+    ChatRoomUpdate,
+    ChatRoomMessageCount,
+)
 from models.chat import Message, Room
 from models.user import User
 from datetime import datetime
 
-from services.user_services import get_user_by_id
+
+def get_rooms(db: Session) -> List[Room]:
+
+    try:
+
+        db_room = db.query(Room).all()
+        return db_room
+
+    except SQLAlchemyError as ex:
+
+        print(ex)
+        return []
 
 
-def get_all_rooms(
-    db: Session,
-):
+def get_room(db: Session, room_id: int) -> Optional[Room]:
 
-    db_room = db.query(Room).all()
+    try:
 
-    return db_room
+        db_room = db.get(Room, room_id)
+        return db_room
 
-
-def get_room_by_id(
-    db: Session,
-    room_id: int,
-):
-
-    db_room = db.query(Room).filter(Room.id == room_id).first()
-
-    return db_room
+    except SQLAlchemyError as ex:
+        print(ex)
+        return None
 
 
-def get_rooms_by_participant_id(
-    db: Session,
-    participant_id: int,
-):
+def get_participant_rooms(db: Session, participant_id: int) -> List[Room]:
 
-    db_rooms = (
-        db.query(Room).join(Room.participants).filter(User.id == participant_id).all()
-    )
+    try:
 
-    return db_rooms
+        db_rooms = (
+            db.query(Room)
+            .join(Room.participants)
+            .filter(User.id == participant_id)
+            .all()
+        )
 
+        return db_rooms
 
-def add_room(db: Session, chat_room: ChatRoomCreate, admin_id: int):
+    except SQLAlchemyError as ex:
 
-    db_room = Room(
-        name=chat_room.name, description=chat_room.description, admin_id=admin_id
-    )
-
-    admin_user = db.get(User, admin_id)
-    db_room.participants.append(admin_user)
-
-    db.add(db_room)
-
-    db.commit()
-
-    db.refresh(db_room)
-
-    return db_room
+        print(ex)
+        return []
 
 
-def edit_room_by_id(
+def get_participant_room(
+    db: Session, room_id: int, participant_id: int
+) -> Optional[Room]:
+
+    try:
+
+        db_room = (
+            db.query(Room)
+            .join(Room.participants)
+            .filter(User.id == participant_id, Room.id == room_id)
+            .first()
+        )
+
+        return db_room
+
+    except SQLAlchemyError as ex:
+
+        print(ex)
+        return None
+
+
+def create_room(
+    db: Session, chat_room: ChatRoomCreate, admin_id: int
+) -> Optional[Room]:
+
+    try:
+
+        db_room = Room(
+            name=chat_room.name, description=chat_room.description, admin_id=admin_id
+        )
+        admin_user = db.get(User, admin_id)
+        db_room.participants.append(admin_user)
+
+        db.add(db_room)
+        db.commit()
+        db.refresh(db_room)
+        return db_room
+    except SQLAlchemyError as ex:
+
+        db.rollback()
+        print(ex)
+        return None
+
+
+def update_room(
     db: Session,
     room_id: int,
     user_id: int,
     chat_room: ChatRoomUpdate,
     admin_check: bool = True,
-):
+) -> Optional[Room]:
 
-    db_room = db.query(Room).filter(Room.id == room_id).first()
+    try:
 
-    if db_room and (not admin_check or db_room.admin_id == user_id):
+        db_room = db.get(Room, room_id)
 
-        if chat_room.name:
-            db_room.name = chat_room.name
+        if db_room and (not admin_check or db_room.admin_id == user_id):
 
-        if chat_room.description:
-            db_room.description = chat_room.description
+            if chat_room.name:
 
-        db.commit()
+                db_room.name = chat_room.name
 
-        db.refresh(db_room)
+            if chat_room.description:
 
-        return db_room
+                db_room.description = chat_room.description
 
-    return None
+            db.commit()
+            db.refresh(db_room)
+
+            return db_room
+
+        return None
+
+    except SQLAlchemyError as ex:
+        db.rollback()
+        print(ex)
+        return None
 
 
-def remove_room_by_id(
+def delete_room(
     db: Session, room_id: int, user_id: int, admin_check: bool = True
-):
+) -> Optional[Room]:
 
-    db_room = db.query(Room).filter(Room.id == room_id).first()
+    try:
 
-    if db_room and (not admin_check or db_room.admin_id == user_id):
+        db_room = db.get(Room, room_id)
 
-        db.delete(db_room)
+        if db_room and (not admin_check or db_room.admin_id == user_id):
 
-        db.commit()
+            db.delete(db_room)
+            db.commit()
 
-        return db_room
+            return db_room
 
-    return None
+        return None
 
+    except SQLAlchemyError as ex:
 
-def get_recent_messages_by_room_id(
-    db: Session,
-    room_id: int,
-    cursor: datetime = None,
-    limit: int = 10,
-):
-
-    if cursor:
-
-        db_messages = (
-            db.query(Message)
-            .filter(Message.room_id == room_id)
-            .filter(Message.datetime_delivered < cursor)
-            .order_by(Message.datetime_delivered.desc())
-            .limit(limit)
-            .all()
-        )
-    else:
-        db_messages = (
-            db.query(Message)
-            .filter(Message.room_id == room_id)
-            .order_by(Message.datetime_delivered.desc())
-            .limit(limit)
-            .all()
-        )
-
-    return db_messages
+        db.rollback()
+        print(ex)
+        return None
 
 
-def add_participant_to_room(db: Session, room_id: int, user_id: int):
+def get_recent_room_messages(
+    db: Session, room_id: int, cursor: Optional[datetime] = None, limit: int = 10
+) -> List[Message]:
 
-    db_room = db.query(Room).filter(Room.id == room_id).first()
+    try:
 
-    db_user = db.query(User).filter(User.id == user_id).first()
+        query = db.query(Message).filter(Message.room_id == room_id)
 
-    if db_user not in db_room.participants:
+        if cursor is not None:
+            query = query.filter(Message.datetime_delivered < cursor)
+
+        messages = query.order_by(Message.datetime_delivered.desc()).limit(limit).all()
+
+        return messages
+
+    except SQLAlchemyError as ex:
+
+        print(ex)
+        return []
+
+
+def add_room_participant(db: Session, room_id: int, user_id: int) -> bool:
+
+    try:
+
+        db_room = db.get(Room, room_id)
+        db_user = db.get(User, user_id)
+
+        if not db_room or not db_user:
+            return False
+
+        if any(user.id == user_id for user in db_room.participants):
+            return True
 
         db_room.participants.append(db_user)
+        db.commit()
 
-    db.commit()
+        return True
+
+    except SQLAlchemyError as ex:
+        db.rollback()
+        print(ex)
+        return False
 
 
-def add_message(
-    db: Session, room_id: int, message: ChatMessageResponse, sender_id: int
-):
+def check_room_participant(db: Session, room_id: int, user_id: int) -> bool:
 
-    db_message = Message(
-        text=message.message,
-        datetime_sent=message.datetime_sent,
-        sender_id=sender_id,
-        room_id=room_id,
-    )
+    try:
 
-    db.add(db_message)
+        db_room = db.get(Room, room_id)
+        db_user = db.get(User, user_id)
 
-    db.commit()
+        if db_user in db_room.participants:
+            return True
 
-    db.refresh(db_message)
+        return False
 
-    return db_message
+    except SQLAlchemyError as ex:
+
+        print(ex)
+        return False
+
+
+def create_message(
+    db: Session, room_id: int, message: ChatMessageRequest, sender_id: int
+) -> Optional[Message]:
+
+    try:
+
+        db_message = Message(
+            text=message.message,
+            datetime_sent=message.datetime_sent,
+            sender_id=sender_id,
+            room_id=room_id,
+        )
+
+        db.add(db_message)
+        db.commit()
+        db.refresh(db_message)
+
+        return db_message
+
+    except SQLAlchemyError as ex:
+
+        db.rollback()
+        print(ex)
+        return None
+
+
+def get_room_messages_count(db: Session) -> List[ChatRoomMessageCount]:
+
+    try:
+
+        db_messages = (
+            db.query(Room.id, Room.name, func.count(Message.id))
+            .outerjoin(Message, Room.id == Message.room_id)
+            .group_by(Room.id)
+            .all()
+        )
+
+        messages = [
+            {"id": room_id, "name": name, "message_count": count}
+            for room_id, name, count in db_messages
+        ]
+
+        return messages
+
+    except SQLAlchemyError as ex:
+
+        db.rollback()
+        print(ex)
+
+        return []

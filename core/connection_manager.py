@@ -15,12 +15,13 @@ class ConnectionManager:
             self.active_connections[room_id] = {}
         self.active_connections[room_id][user_id] = websocket
 
-    def disconnect(self, room_id: int, user_id: int):
+    def disconnect(self, room_id: int, user_id: int, *args):
 
         if (
             room_id in self.active_connections
             and user_id in self.active_connections[room_id]
         ):
+            self.active_connections[room_id][user_id].close(*args)
             del self.active_connections[room_id][user_id]
             if not self.active_connections[room_id]:
                 del self.active_connections[room_id]
