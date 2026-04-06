@@ -24,8 +24,6 @@ class User(BaseModel):
 
 class UserCreate(User):
 
-    model_config = ConfigDict(from_attributes=True)
-
     password: str
     password2: str
 
@@ -65,7 +63,9 @@ class UserLogin(BaseModel):
     password: str
 
 
-class ProfileResponse(BaseModel):
+class UserResponse(BaseModel):
+
+    model_config = ConfigDict(from_attributes=True)
 
     email: str
     username: str

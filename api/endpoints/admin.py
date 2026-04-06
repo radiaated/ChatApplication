@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 
 from api.deps import get_db, role_check
-from schemas.user import ProfileResponse, UserCreate, UserUpdate
+from schemas.user import UserResponse, UserCreate, UserUpdate
 from schemas.chat import ChatRoomCreate, ChatRoomUpdate, ChatRoomResponse
 from services import user_services, chat_services
 
@@ -11,7 +11,7 @@ from typing import List
 admin_router = APIRouter()
 
 
-@admin_router.get("/user/", response_model=List[ProfileResponse])
+@admin_router.get("/user/", response_model=List[UserResponse])
 async def list_users(db=Depends(get_db), _=Depends(role_check("admin"))):
 
     users = user_services.get_users(db=db)
@@ -19,7 +19,7 @@ async def list_users(db=Depends(get_db), _=Depends(role_check("admin"))):
     return users
 
 
-@admin_router.get("/user/{id}/", response_model=ProfileResponse)
+@admin_router.get("/user/{id}/", response_model=UserResponse)
 async def retrieve_user(id: int, db=Depends(get_db), _=Depends(role_check("admin"))):
 
     user = user_services.get_user(db=db, id=id)
@@ -35,7 +35,7 @@ async def retrieve_user(id: int, db=Depends(get_db), _=Depends(role_check("admin
     return user
 
 
-@admin_router.post("/user/", response_model=ProfileResponse)
+@admin_router.post("/user/", response_model=UserResponse)
 async def create_user(
     user: UserCreate, db=Depends(get_db), _=Depends(role_check("admin"))
 ):
@@ -53,7 +53,7 @@ async def create_user(
     return db_user
 
 
-@admin_router.put("/user/{id}/", response_model=ProfileResponse)
+@admin_router.put("/user/{id}/", response_model=UserResponse)
 async def update_user(
     id: int, user: UserUpdate, db=Depends(get_db), _=Depends(role_check("admin"))
 ):
@@ -72,7 +72,7 @@ async def update_user(
     return db_user
 
 
-@admin_router.delete("/user/{id}/", response_model=ProfileResponse)
+@admin_router.delete("/user/{id}/", response_model=UserResponse)
 async def delete_user(id: int, db=Depends(get_db), _=Depends(role_check("admin"))):
 
     db_user = user_services.delete_user(db=db, user_id=id)

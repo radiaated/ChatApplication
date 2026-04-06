@@ -2,16 +2,7 @@ from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 
 
-class ChatRoomResponse(BaseModel):
-    id: int
-    name: str
-    description: str
-    admin_id: int
-
-
 class ChatRoomCreate(BaseModel):
-
-    model_config = ConfigDict(from_attributes=True)
 
     name: str
     description: str
@@ -19,10 +10,18 @@ class ChatRoomCreate(BaseModel):
 
 class ChatRoomUpdate(BaseModel):
 
-    model_config = ConfigDict(from_attributes=True)
-
     name: str | None = None
     description: str | None = None
+
+
+class ChatRoomResponse(BaseModel):
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    description: str
+    admin_id: int
 
 
 class ChatMessage(BaseModel):
@@ -32,12 +31,10 @@ class ChatMessage(BaseModel):
 
 
 class ChatMessageRequest(ChatMessage):
-
-    model_config = ConfigDict(from_attributes=True)
+    pass
 
 
 class ChatMessageResponse(ChatMessage):
-
     model_config = ConfigDict(from_attributes=True)
 
     id: int
