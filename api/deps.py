@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
-from jose import jwt
+from jose import jwt, JWTError, ExpiredSignatureError
 
 from db.session import Session
 from core.config import settings
@@ -23,7 +23,10 @@ def get_db():
 def get_auth_user(token: str = Depends(oauth2_scheme)):
     """Decode JWT token and return the authenticated user's ID and role."""
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, [settings.JWT_ALGORITHM])
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
+        )
+
         user_id = payload.get("sub")
         user_role = payload.get("role")
 
@@ -32,8 +35,13 @@ def get_auth_user(token: str = Depends(oauth2_scheme)):
 
         return user_id, user_role
 
+    except ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired")
+
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
     except Exception as ex:
-        # Log the exception for debugging
         print(ex)
         raise HTTPException(status_code=401, detail="Invalid token")
 
