@@ -1,28 +1,29 @@
-from typing import Optional, List, Union
 from fastapi import HTTPException, status
 
-from sqlalchemy.orm import Session
 from sqlalchemy import or_
+from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
+from schemas.user import UserCreate, UserUpdate
 from models.user import User
 from core.security import hash_password
-from schemas.user import UserCreate, UserUpdate
+
+from typing import Optional, List, Union
 
 
 def create_user(db: Session, user: UserCreate) -> Optional[User]:
-
+    """Create a new user after checking for existing username or email."""
     try:
-
+        # Check if username or email already exists in the database
         if get_user_by_email_or_username(
             db=db, username=user.username, email=user.email
         ):
-
             raise HTTPException(
                 detail="User with the given username or email already exists",
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Hash the password before storing
         db_user = User(
             username=user.username,
             email=user.email,
@@ -33,25 +34,20 @@ def create_user(db: Session, user: UserCreate) -> Optional[User]:
         db.add(db_user)
         db.commit()
         db.refresh(db_user)
-
         return db_user
-
     except SQLAlchemyError as ex:
-
         db.rollback()
         print(ex)
-
         return None
 
 
 def update_user(db: Session, user_id: int, user: UserUpdate) -> Optional[User]:
-
+    """Update user information after checking for unique username/email."""
     try:
-
+        # Ensure updated username or email does not already exist for another user
         if get_user_by_email_or_username(
             db=db, username=user.username, email=user.email, excluded_user_id=user_id
         ):
-
             raise HTTPException(
                 detail="User with the given username or email already exists",
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -69,23 +65,18 @@ def update_user(db: Session, user_id: int, user: UserUpdate) -> Optional[User]:
 
             db.commit()
             db.refresh(db_user)
-
             return db_user
 
         return None
-
     except SQLAlchemyError as ex:
-
         db.rollback()
         print(ex)
-
         return None
 
 
 def delete_user(db: Session, user_id: int) -> Optional[User]:
-
+    """Delete a user by ID if it exists."""
     try:
-
         db_user = db.get(User, user_id)
 
         if db_user:
@@ -94,32 +85,25 @@ def delete_user(db: Session, user_id: int) -> Optional[User]:
             return db_user
 
         return None
-
     except SQLAlchemyError as ex:
-
         db.rollback()
         print(ex)
-
         return None
 
 
 def get_users(db: Session) -> List[User]:
-
+    """Retrieve all users from the database."""
     try:
-
         return db.query(User).all()
-
     except SQLAlchemyError as ex:
-
         print(ex)
-
         return []
 
 
 def get_user(db: Session, id: int) -> Optional[dict]:
-
+    """Retrieve a user's public information by ID."""
     try:
-
+        # Select only specific fields for security (exclude password)
         db_user = (
             db.query(User)
             .with_entities(User.email, User.username, User.role)
@@ -135,11 +119,8 @@ def get_user(db: Session, id: int) -> Optional[dict]:
             }
 
         return None
-
     except SQLAlchemyError as ex:
-
         print(ex)
-
         return None
 
 
@@ -149,17 +130,18 @@ def get_user_by_email_or_username(
     username: str,
     excluded_user_id: Union[int, None] = None,
 ) -> Optional[User]:
-
+    """Retrieve a user by email or username, optionally excluding a specific user ID."""
     try:
-
+        # Filter for username OR email using SQLAlchemy 'or_'
         query = db.query(User).filter(
             or_(User.username == username, User.email == email)
         )
+
+        # Exclude a user from search (used for updates)
         if excluded_user_id:
             query = query.filter(User.id != excluded_user_id)
+
         return query.first()
-
     except SQLAlchemyError as ex:
-
         print(ex)
         return None

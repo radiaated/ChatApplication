@@ -6,10 +6,14 @@ from api.endpoints.chat import chat_router
 from api.endpoints.admin import admin_router
 from ws.endpoints.chat_ws import chat_ws
 
+
+# Ensure database tables are created on startup
 import db.init_db
 
+# Initialize FastAPI app
 app = FastAPI()
 
+# Include API routers
 app.include_router(auth_router, prefix="/api/auth")
 app.include_router(user_router, prefix="/api/user")
 app.include_router(chat_router, prefix="/api/chat")
@@ -19,5 +23,5 @@ app.include_router(chat_ws, prefix="/ws")
 
 @app.get("/ping/")
 async def ping():
-
+    """Simple health check endpoint."""
     return {"status": "active"}

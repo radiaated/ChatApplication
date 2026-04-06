@@ -12,16 +12,15 @@ user_router = APIRouter()
 async def retrieve_profile(
     db=Depends(get_db), user_id=Depends(role_check("user", "admin"))
 ):
-
+    """Retrieve the profile of the authenticated user."""
+    # Fetch user profile from the database
     user_profile = user_services.get_user(db=db, id=user_id)
 
     if not user_profile:
-
         response = JSONResponse(
             content={"detail": "User doesn't exist."},
             status_code=status.HTTP_404_NOT_FOUND,
         )
-
         return response
 
     return user_profile

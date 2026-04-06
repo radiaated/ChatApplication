@@ -4,6 +4,7 @@ from sqlalchemy.orm import relationship
 from db.base import Base
 from models.user import User
 
+# Association table for many-to-many relationship between rooms and participants
 room_participants = Table(
     "room_participants",
     Base.metadata,
@@ -13,6 +14,7 @@ room_participants = Table(
 
 
 class Room(Base):
+    """Chat room model with admin, messages, and participants."""
 
     __tablename__ = "rooms"
 
@@ -20,29 +22,32 @@ class Room(Base):
     name = Column(String(32), nullable=False)
     description = Column(String(64), nullable=False)
 
+    # Admin of the chat room
     admin_id = Column(
         Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
-
     admin = relationship("User", back_populates="admin_rooms", foreign_keys=[admin_id])
+
+    # One-to-one relationship with messages (latest message)
     messages = relationship("Message", back_populates="room", uselist=False)
+
+    # Many-to-many relationship with participants
     participants = relationship(
         "User", secondary=room_participants, back_populates="participant_rooms"
     )
 
 
 class Message(Base):
+    """Chat message model linked to a sender and a room."""
 
     __tablename__ = "messages"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     text = Column(String, nullable=False)
-    datetime_sent = Column(
-        DateTime,
-        nullable=False,
-    )
+    datetime_sent = Column(DateTime, nullable=False)
     datetime_delivered = Column(DateTime, nullable=False, default=func.now())
 
+    # Foreign keys to sender and room
     sender_id = Column(
         Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
@@ -50,5 +55,6 @@ class Message(Base):
         Integer, ForeignKey("rooms.id", ondelete="CASCADE"), nullable=False
     )
 
+    # Relationships
     user = relationship("User", back_populates="messages")
     room = relationship("Room", back_populates="messages")
