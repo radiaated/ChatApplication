@@ -2,16 +2,24 @@ from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from api.deps import get_db, get_auth_user
 
-from schemas.chat import ChatRoomCreate, ChatRoomUpdate, ChatRoomResponse
+from schemas.chat import (
+    ChatRoomCreate,
+    ChatRoomUpdate,
+    ChatRoomResponse,
+    ChatMessageResponse,
+)
 from services.chat_services import (
     get_room_by_id,
     get_rooms_by_participant_id,
     add_room,
     edit_room,
     remove_room,
+    get_recent_messages_by_room_id,
 )
 
 from typing import List
+
+from datetime import datetime
 
 
 chat_router = APIRouter()
@@ -85,3 +93,31 @@ def delete_room(
         )
 
     return db_room
+
+
+@chat_router.get("/room/{id}/messages/", response_model=List[ChatMessageResponse])
+def get_recent_messages(
+    id: int,
+    cursor: str,
+    limit: int | None,
+    db=Depends(get_db),
+    user_id=Depends(get_auth_user),
+):
+    # TODO
+    # Add a check if the user is the pariticpant of the room
+
+    db_messages = get_recent_messages_by_room_id(
+        db=db, room_id=id, cursor=datetime.fromisoformat(cursor), limit=limit
+    )
+
+    messages = [
+        {
+            "id": db_msg.id,
+            "message": db_msg.text,
+            "datetime_sent": db_msg.datetime_delivered,
+            "sender_id": db_msg.sender_id,
+        }
+        for db_msg in db_messages
+    ]
+
+    return messages
