@@ -29,3 +29,19 @@ def get_user_by_email_or_username(db: Session, email: str, username: str):
         .filter(or_(User.username == username, User.email == email))
         .first()
     )
+
+
+def get_user_by_id(db: Session, id: int):
+
+    db_user = (
+        db.query(User)
+        .with_entities(User.email, User.username, User.role)
+        .filter(User.id == id)
+        .first()
+    )
+
+    return {
+        "email": db_user[0],
+        "username": db_user[1],
+        "role": db_user[2].value,
+    }

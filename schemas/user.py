@@ -54,3 +54,10 @@ class UserCreate(User):
 class UserLogin(BaseModel):
     username: str
     password: str
+
+
+class ProfileResponse(BaseModel):
+
+    email: str
+    username: str
+    role: str
