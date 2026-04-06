@@ -1,6 +1,8 @@
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 
+from typing import List
+
 
 class ChatRoomCreate(BaseModel):
 
@@ -41,8 +43,28 @@ class ChatMessageResponse(ChatMessage):
     sender_id: int
 
 
-class ChatRoomMessageCount(BaseModel):
+class ChatRoomMessageCountResponse(BaseModel):
 
     id: int
     name: str
     message_count: int
+
+
+class UserMessageCount(BaseModel):
+
+    user_id: int
+    username: str
+    message_count: int
+
+
+class UserRoomCount(BaseModel):
+
+    user_id: int
+    username: str
+    room_count: int
+
+
+class UserActivityResponse(BaseModel):
+
+    messages_count: List[UserMessageCount]
+    rooms_count: List[UserRoomCount]
