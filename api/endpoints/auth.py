@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 
 from api.deps import get_db
 from schemas.user import UserCreate, UserLogin
+from schemas.token import TokenResponse
 from services.user_services import create_user, get_user_by_email_or_username
 from services.auth_services import authenticate_user
 
@@ -25,7 +26,7 @@ async def signup(user: UserCreate, db=Depends(get_db)):
     )
 
 
-@auth_router.post("/signin/")
+@auth_router.post("/signin/", response_model=TokenResponse)
 async def signin(user: UserLogin, db=Depends(get_db)):
 
     access_token = authenticate_user(db=db, user=user)
@@ -39,8 +40,4 @@ async def signin(user: UserLogin, db=Depends(get_db)):
 
         return response
 
-    response = JSONResponse(content={"detail": "Signed in."})
-
-    response.set_cookie("access", access_token, max_age=3600)
-
-    return response
+    return {"access": access_token}
