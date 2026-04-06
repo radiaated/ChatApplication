@@ -3,10 +3,15 @@ from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from ws.deps import get_auth_user_ws
 from api.deps import get_db
 from services.user_services import get_user_by_id
-from services.chat_services import add_participant_to_room, add_message
+from services.chat_services import (
+    add_participant_to_room,
+    add_message,
+    get_recent_messages_by_room_id,
+)
 from schemas.chat import ChatMessage, ChatMessageResponse
 
 from core.connection_manager import manager
+
 
 chat_ws = APIRouter()
 
@@ -27,6 +32,22 @@ async def chat_room(
         room_id=id,
     )
 
+    db_messages = get_recent_messages_by_room_id(db=db, room_id=id)
+
+    if db_messages:
+
+        messages_repsonse = [
+            ChatMessageResponse(
+                id=db_msg.id,
+                message=db_msg.text,
+                datetime_sent=db_msg.datetime_delivered,
+                sender_id=db_msg.sender_id,
+            ).model_dump(mode="json")
+            for db_msg in db_messages
+        ]
+
+        await manager.send(message=messages_repsonse, room_id=id, user_id=user_id)
+
     try:
 
         while True:
@@ -42,10 +63,10 @@ async def chat_room(
             )
 
             message_response = ChatMessageResponse(
+                id=db_message.id,
                 message=db_message.text,
                 datetime_sent=db_message.datetime_delivered,
                 sender_id=db_message.sender_id,
-                sender_username=user_detail["username"],
             )
 
             await manager.broadcast(

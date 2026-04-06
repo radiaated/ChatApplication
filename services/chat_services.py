@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from schemas.chat import ChatMessageResponse, ChatRoomCreate, ChatRoomUpdate
 from models.chat import Message, Room
 from models.user import User
+from datetime import datetime
 
 from services.user_services import get_user_by_id
 
@@ -89,6 +90,35 @@ def remove_room(
     db.commit()
 
     return db_room
+
+
+def get_recent_messages_by_room_id(
+    db: Session,
+    room_id: int,
+    cursor: datetime = None,
+    limit: int = 10,
+):
+
+    if cursor:
+
+        db_messages = (
+            db.query(Message)
+            .filter(Message.room_id == room_id)
+            .filter(Message.datetime_delivered < cursor)
+            .order_by(Message.datetime_delivered.desc())
+            .limit(limit)
+            .all()
+        )
+    else:
+        db_messages = (
+            db.query(Message)
+            .filter(Message.room_id == room_id)
+            .order_by(Message.datetime_delivered.desc())
+            .limit(limit)
+            .all()
+        )
+
+    return db_messages
 
 
 def add_participant_to_room(db: Session, room_id: int, user_id: int):
