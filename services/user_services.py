@@ -104,19 +104,10 @@ def get_user(db: Session, id: int) -> Optional[dict]:
     """Retrieve a user's public information by ID."""
     try:
         # Select only specific fields for security (exclude password)
-        db_user = (
-            db.query(User)
-            .with_entities(User.email, User.username, User.role)
-            .filter(User.id == id)
-            .first()
-        )
+        db_user = db.get(User, id)
 
         if db_user:
-            return {
-                "email": db_user[0],
-                "username": db_user[1],
-                "role": db_user[2].value,
-            }
+            return db_user
 
         return None
     except SQLAlchemyError as ex:

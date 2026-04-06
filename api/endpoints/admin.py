@@ -109,7 +109,7 @@ async def list_rooms(db=Depends(get_db), _=Depends(role_check("admin"))):
 @admin_router.get("/room/{id}/", response_model=ChatRoomResponse)
 async def retrieve_room(id: int, db=Depends(get_db), _=Depends(role_check("admin"))):
     """Retrieve a single chat room by ID."""
-    room = chat_services.get_room(db=db, id=id)
+    room = chat_services.get_room(db=db, room_id=id)
 
     # Return 404 if room doesn't exist
     if not room:
@@ -128,9 +128,7 @@ async def create_room(
 ):
     """Create a new chat room."""
     # Set admin_check=False because admin is creating room
-    db_room = chat_services.create_room(
-        db=db, chat_room=room, admin_id=user_id, admin_check=False
-    )
+    db_room = chat_services.create_room(db=db, chat_room=room, admin_id=user_id)
 
     # Return 400 if creation fails
     if not db_room:

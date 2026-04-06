@@ -87,14 +87,11 @@ def update_room(
 @chat_router.delete("/room/{id}/", response_model=ChatRoomResponse)
 def delete_room(
     id: int,
-    chat_room: ChatRoomUpdate,
     db=Depends(get_db),
     user_id=Depends(role_check("user", "admin")),
 ):
     """Delete a chat room if the user has proper access."""
-    db_room = chat_services.delete_room(
-        db=db, room_id=id, user_id=user_id, chat_room=chat_room
-    )
+    db_room = chat_services.delete_room(db=db, room_id=id, user_id=user_id)
 
     if not db_room:
         return JSONResponse(
@@ -108,7 +105,7 @@ def delete_room(
 @chat_router.get("/room/{id}/messages/", response_model=List[ChatMessageResponse])
 def retrieve_recent_room_messages(
     id: int,
-    limit: int | None,
+    limit: int | None = None,
     cursor: str | None = None,
     db=Depends(get_db),
     user_id=Depends(role_check("user", "admin")),

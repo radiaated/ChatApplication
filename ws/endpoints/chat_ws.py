@@ -51,7 +51,7 @@ async def chat_room(
 
     # Notify room that user has joined
     await manager.broadcast(
-        message="%s has joined the room" % user_detail["username"],
+        message="%s has joined the room" % user_detail.username,
         room_id=id,
     )
 
