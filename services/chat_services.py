@@ -165,6 +165,7 @@ def add_room_participant(db: Session, room_id: int, user_id: int) -> bool:
         db_user = db.get(User, user_id)
 
         if not db_room or not db_user:
+
             return False
 
         # Check if user is already a participant
@@ -185,6 +186,10 @@ def check_room_participant(db: Session, room_id: int, user_id: int) -> bool:
     try:
         db_room = db.get(Room, room_id)
         db_user = db.get(User, user_id)
+
+        if not db_room or not db_user:
+
+            return False
 
         if db_user in db_room.participants:
             return True

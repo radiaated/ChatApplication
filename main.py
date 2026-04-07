@@ -1,10 +1,10 @@
 from fastapi import FastAPI
 
-from api.endpoints.auth import auth_router
-from api.endpoints.user import user_router
-from api.endpoints.chat import chat_router
-from api.endpoints.admin import admin_router
-from ws.endpoints.chat_ws import chat_ws
+from api.routes.v1.auth import auth_router
+from api.routes.v1.user import user_router
+from api.routes.v1.chat import chat_router
+from api.routes.v1.admin import admin_router
+from ws.routes.chat_ws import chat_ws
 
 from admin.setup import setup_admin
 
@@ -25,10 +25,10 @@ app = FastAPI(
 setup_admin(app)
 
 # Include API routers
-app.include_router(auth_router, prefix="/api/auth")
-app.include_router(user_router, prefix="/api/user")
-app.include_router(chat_router, prefix="/api/chat")
-app.include_router(admin_router, prefix="/api/admin")
+app.include_router(auth_router, prefix="/api/v1/auth")
+app.include_router(user_router, prefix="/api/v1/user")
+app.include_router(chat_router, prefix="/api/v1/chat")
+app.include_router(admin_router, prefix="/api/v1/admin")
 app.include_router(chat_ws, prefix="/ws")
 
 
