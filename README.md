@@ -9,6 +9,14 @@ This project is a real-time chat application built with FastAPI, featuring JWT-b
 - REST API → [**Documentation**](https://www.postman.com/sumans-team-8696/workspace/suman-s-team/collection/33813618-5fda7e34-0f7d-4726-a7f6-50ddb0bbc069?action=share&source=copy-link&creator=33813618)
 - Websocket → [**Documentation**](https://www.postman.com/sumans-team-8696/workspace/suman-s-team/collection/69d42469a8d45117c97afacb?action=share&source=copy-link&creator=33813618)
 
+### Note
+
+Create a user with the role `admin` internally:
+
+```bash
+python -m scripts.create_admin --email <email> --username <username> --password <password>
+```
+
 ## Features
 
 ### Authentication
