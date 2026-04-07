@@ -13,7 +13,14 @@ from admin.setup import setup_admin
 import db.init_db
 
 # Initialize FastAPI app
-app = FastAPI()
+app = FastAPI(
+    title="Chat application",
+    description="""This project is a real-time chat application built with FastAPI, 
+    featuring JWT-based authentication, role-based access control (RBAC), and WebSocket support 
+    for secure messaging. It includes PostgreSQL-backed persistence for users, chat rooms,
+    and messages, with admin analytics for monitoring user activity and room engagement.""",
+    version="1.0.0",
+)
 
 setup_admin(app)
 
