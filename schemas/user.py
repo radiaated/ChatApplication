@@ -58,6 +58,16 @@ class UserUpdate(User):
     role: Optional[UserRole] = None
 
 
+class UserNoRoleUpdate(UserUpdate):
+    """Schema for partially updating user information without changing the role.
+
+    The 'role' field is not allowed and will always be None.
+    Other fields (email, username) can still be updated.
+    """
+
+    role: None = None
+
+
 class UserLogin(BaseModel):
     """Schema for user login."""
 
