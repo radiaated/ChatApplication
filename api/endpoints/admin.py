@@ -12,7 +12,7 @@ from schemas.chat import (
 )
 from services import user_services, chat_services
 
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 
 admin_router = APIRouter()
@@ -193,8 +193,8 @@ async def delete_room(
     "/dashboard/room-message/", response_model=List[ChatRoomMessageCountResponse]
 )
 async def retrieve_dashboard_room_message(
-    start: str | None = None,
-    end: str | None = None,
+    start: Optional[str] = None,
+    end: Optional[str] = None,
     db=Depends(get_db),
     _=Depends(role_check("admin")),
 ):
@@ -212,9 +212,9 @@ async def retrieve_dashboard_room_message(
 
 @admin_router.get("/dashboard/user-participation/", response_model=UserActivityResponse)
 async def retrieve_dashboard_user_participation(
-    user_id: int | None = None,
-    start: str | None = None,
-    end: str | None = None,
+    user_id: Optional[int] = None,
+    start: Optional[str] = None,
+    end: Optional[str] = None,
     db=Depends(get_db),
     _=Depends(role_check("admin")),
 ):

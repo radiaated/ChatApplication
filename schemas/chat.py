@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 
 class ChatRoomCreate(BaseModel):
@@ -13,8 +13,8 @@ class ChatRoomCreate(BaseModel):
 class ChatRoomUpdate(BaseModel):
     """Schema for updating a chat room (partial update allowed)."""
 
-    name: str | None = None
-    description: str | None = None
+    name: Optional[str] = None
+    description: Optional[str] = None
 
 
 class ChatRoomResponse(BaseModel):

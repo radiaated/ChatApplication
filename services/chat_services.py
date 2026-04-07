@@ -218,8 +218,8 @@ def create_message(
 
 def get_room_messages_count(
     db: Session,
-    start_datetime: datetime | None = None,
-    end_datetime: datetime | None = None,
+    start_datetime: Optional[datetime] = None,
+    end_datetime: Optional[datetime] = None,
 ) -> List[ChatRoomMessageCountResponse]:
     """Get count of messages per room, optionally filtered by date range."""
     try:
@@ -250,9 +250,9 @@ def get_room_messages_count(
 
 def get_user_messages_count(
     db: Session,
-    start_datetime: datetime | None = None,
-    end_datetime: datetime | None = None,
-    user_id: int | None = None,
+    start_datetime: Optional[datetime] = None,
+    end_datetime: Optional[datetime] = None,
+    user_id: Optional[int] = None,
 ) -> List[UserMessageCount]:
     """Get count of messages sent by users, optionally filtered by date or user."""
     try:

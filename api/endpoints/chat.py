@@ -10,7 +10,7 @@ from schemas.chat import (
 )
 from services import chat_services
 
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 
 chat_router = APIRouter()
@@ -105,8 +105,8 @@ def delete_room(
 @chat_router.get("/room/{id}/messages/", response_model=List[ChatMessageResponse])
 def retrieve_recent_room_messages(
     id: int,
-    limit: int | None = None,
-    cursor: str | None = None,
+    limit: Optional[int] = None,
+    cursor: Optional[str] = None,
     db=Depends(get_db),
     user_id=Depends(role_check("user", "admin")),
 ):
@@ -125,15 +125,4 @@ def retrieve_recent_room_messages(
         limit=limit,
     )
 
-    # Format messages for response
-    messages = [
-        {
-            "id": db_msg.id,
-            "message": db_msg.text,
-            "datetime_sent": db_msg.datetime_delivered,
-            "sender_id": db_msg.sender_id,
-        }
-        for db_msg in db_messages
-    ]
-
-    return messages
+    return db_messages
