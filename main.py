@@ -32,7 +32,7 @@ app.include_router(admin_router, prefix="/api/v1/admin")
 app.include_router(chat_ws, prefix="/ws")
 
 
-@app.get("/ping/")
+@app.get("/")
 async def ping():
     """Simple health check endpoint."""
     return {"status": "active"}
