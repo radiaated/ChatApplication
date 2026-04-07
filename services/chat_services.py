@@ -200,7 +200,7 @@ def create_message(
     """Create a new message in a room from a sender."""
     try:
         db_message = Message(
-            text=message.message,
+            text=message.text,
             datetime_sent=message.datetime_sent,
             sender_id=sender_id,
             room_id=room_id,

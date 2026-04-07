@@ -31,7 +31,7 @@ class ChatRoomResponse(BaseModel):
 class ChatMessage(BaseModel):
     """Base schema for chat messages."""
 
-    message: str
+    text: str
     datetime_sent: datetime
 
 
@@ -48,6 +48,13 @@ class ChatMessageResponse(ChatMessage):
 
     id: int
     sender_id: int
+
+
+class ChatResponse(BaseModel):
+    """Wraps a chat response with its type and data."""
+
+    type: str
+    data: str | ChatMessageResponse | List[ChatMessageResponse]
 
 
 class ChatRoomMessageCountResponse(BaseModel):

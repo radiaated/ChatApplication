@@ -1,6 +1,6 @@
 from fastapi import WebSocket
 
-from typing import Dict, List
+from typing import Dict
 
 
 class ConnectionManager:
@@ -31,11 +31,13 @@ class ConnectionManager:
 
     async def broadcast(self, message: dict, room_id: int):
         # Send message to all users in a room
+
         if room_id in self.active_connections:
             for connection in self.active_connections[room_id].values():
                 await connection.send_json(message)
 
-    async def send(self, message: List[dict], room_id: int, user_id: int):
+    async def send(self, message: dict, room_id: int, user_id: int):
+
         # Send message to a specific user
         acitve_connection = self.active_connections[room_id][user_id]
         await acitve_connection.send_json(message)

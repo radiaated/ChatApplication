@@ -9,7 +9,7 @@ from fastapi import (
 from ws.deps import get_auth_user_ws
 from api.deps import get_db
 from services import user_services, chat_services
-from schemas.chat import ChatMessageRequest, ChatMessageResponse
+from schemas.chat import ChatMessageRequest, ChatMessageResponse, ChatResponse
 from core.connection_manager import manager
 
 # WebSocket router for chat functionality
@@ -42,38 +42,40 @@ async def chat_room(
     await manager.connect(websocket=ws, room_id=id, user_id=user_id)
 
     # Add user to room participants in DB
-    is_added = chat_services.add_room_participant(db=db, room_id=id, user_id=user_id)
-    if not is_added:
+    has_joined = chat_services.add_room_participant(db=db, room_id=id, user_id=user_id)
+
+    if not has_joined:
         await manager.disconnect(
             room_id=id, user_id=user_id, code=1000, reason="Failed to join the room."
         )
         return
 
     # Notify room that user has joined
+    chat_response = ChatResponse(
+        type="broadcast_user_join", data="%s has joined the room" % user_detail.username
+    )
     await manager.broadcast(
-        message="%s has joined the room" % user_detail.username,
+        message=chat_response.model_dump(mode="json"),
         room_id=id,
     )
 
     # Send recent room messages to the user
     db_messages = chat_services.get_recent_room_messages(db=db, room_id=id)
     if db_messages:
-        messages_response = [
-            ChatMessageResponse(
-                id=db_msg.id,
-                message=db_msg.text,
-                datetime_sent=db_msg.datetime_delivered,
-                sender_id=db_msg.sender_id,
-            ).model_dump(mode="json")
-            for db_msg in db_messages
-        ]
-        await manager.send(message=messages_response, room_id=id, user_id=user_id)
+        chat_response = ChatResponse(
+            type="fetch_recent_messages",
+            data=[ChatMessageResponse.model_validate(msg) for msg in db_messages],
+        )
+
+        await manager.send(
+            message=chat_response.model_dump(mode="json"), room_id=id, user_id=user_id
+        )
 
     try:
         while True:
             # Receive new message from user
             data = await ws.receive_json()
-            chat_message = ChatMessageRequest(**data)
+            chat_message = ChatMessageRequest.model_validate(data)
 
             # Store message in DB
             db_message = chat_services.create_message(
@@ -83,15 +85,13 @@ async def chat_room(
                 sender_id=user_id,
             )
 
-            # Broadcast message to all participants
-            message_response = ChatMessageResponse(
-                id=db_message.id,
-                message=db_message.text,
-                datetime_sent=db_message.datetime_delivered,
-                sender_id=db_message.sender_id,
+            chat_response = ChatResponse(
+                type="broadcast_user_message",
+                data=ChatMessageResponse.model_validate(db_message),
             )
+
             await manager.broadcast(
-                message=message_response.model_dump(mode="json"), room_id=id
+                message=chat_response.model_dump(mode="json"), room_id=id
             )
 
     except WebSocketDisconnect:
